@@ -174,32 +174,78 @@ export default async function AdminFormalizationPage({ params }: AdminFormalizat
 
             <Card title="Histórico da formalização">
               {formalization.statusHistory.length === 0 ? (
-                <p className="text-sm text-slate-500">Nenhum evento registrado.</p>
-              ) : (
-                <div className="space-y-6">
-                  {formalization.statusHistory.map((event) => (
-                    <div key={event.id} className="border-l-2 border-blue-100 pl-5">
-                      <p className="font-semibold text-[#071522]">
-                        {formatFormalizationStatus(event.fromStatus)} →{' '}
-                        {formatFormalizationStatus(event.toStatus)}
-                      </p>
-
-                      <p className="mt-2 text-xs text-slate-500">
-                        {formatDateTime(event.createdAt)}
-                      </p>
-
-                      <p className="mt-2 text-sm text-slate-600">
-                        {event.actorName ? `Operador: ${event.actorName}` : 'Sistema'}
-                      </p>
-
-                      {event.reason && (
-                        <p className="mt-2 rounded-xl bg-slate-50 p-3 text-sm leading-6 text-slate-600">
-                          {event.reason}
-                        </p>
-                      )}
-                    </div>
-                  ))}
+                <div className="rounded-2xl bg-slate-50 p-5">
+                  <p className="text-sm text-slate-500">
+                    Nenhum evento de auditoria registrado.
+                  </p>
                 </div>
+              ) : (
+                <ol className="space-y-6">
+                  {formalization.statusHistory.map(
+                    (event, index) => {
+                      const actor =
+                        getFormalizationActorPresentation(
+                          event.actorType,
+                          event.actorName,
+                        );
+
+                      return (
+                        <li
+                          key={event.id}
+                          className="relative pl-8"
+                        >
+                          {index <
+                            formalization.statusHistory.length -
+                              1 && (
+                            <span
+                              aria-hidden="true"
+                              className="absolute left-[5px] top-5 h-[calc(100%+12px)] w-px bg-slate-200"
+                            />
+                          )}
+
+                          <span
+                            aria-hidden="true"
+                            className={`absolute left-0 top-1.5 h-3 w-3 rounded-full ${actor.dotClassName}`}
+                          />
+
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <p
+                              className={`text-sm font-semibold ${actor.className}`}
+                            >
+                              {actor.label}
+                            </p>
+
+                            <span className="text-xs text-slate-300">
+                              ·
+                            </span>
+
+                            <time className="text-xs text-slate-400">
+                              {formatDateTime(
+                                event.createdAt,
+                              )}
+                            </time>
+                          </div>
+
+                          <p className="mt-2 text-sm font-semibold text-[#071522]">
+                            {formatFormalizationStatus(
+                              event.fromStatus,
+                            )}{' '}
+                            →{' '}
+                            {formatFormalizationStatus(
+                              event.toStatus,
+                            )}
+                          </p>
+
+                          {event.reason && (
+                            <p className="mt-2 rounded-xl bg-slate-50 p-3 text-sm leading-6 text-slate-600">
+                              {event.reason}
+                            </p>
+                          )}
+                        </li>
+                      );
+                    },
+                  )}
+                </ol>
               )}
             </Card>
           </div>
@@ -275,6 +321,38 @@ export default async function AdminFormalizationPage({ params }: AdminFormalizat
     </main>
   );
 }
+
+function getFormalizationActorPresentation(
+  actorType: 'SYSTEM' | 'OPERATOR' | 'APPLICANT',
+  actorName: string | null,
+) {
+  switch (actorType) {
+    case 'APPLICANT':
+      return {
+        label: 'Cliente',
+        className: 'text-emerald-700',
+        dotClassName: 'bg-emerald-500',
+      };
+
+    case 'OPERATOR':
+      return {
+        label: actorName
+          ? `Operador · ${actorName}`
+          : 'Operador',
+        className: 'text-blue-700',
+        dotClassName: 'bg-blue-500',
+      };
+
+    case 'SYSTEM':
+    default:
+      return {
+        label: 'Sistema',
+        className: 'text-slate-600',
+        dotClassName: 'bg-slate-400',
+      };
+  }
+}
+
 
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
