@@ -297,11 +297,11 @@ function StatusContent({
             <Link
               href={`/solicitacao/${encodeURIComponent(
                 protocol,
-              )}/formalizacao`}
+              )}/proposta`}
               className="group mt-6 flex w-full items-center justify-between rounded-xl bg-blue-600 px-5 py-4 text-sm font-semibold !text-white shadow-sm transition hover:bg-blue-700 hover:shadow-md sm:w-auto sm:min-w-72"
             >
               <span className="!text-white">
-                Continuar formalização
+                Ver minha proposta
               </span>
 
               <span
