@@ -1,6 +1,10 @@
 import 'server-only';
 
-import type { ApplicationStatusActor, FormalizationStatus } from '@/generated/prisma/client';
+import type {
+  ApplicationStatusActor,
+  FormalizationStatus,
+} from '@/generated/prisma/client';
+
 import { prisma } from '@/lib/prisma';
 
 type TransitionOptions = {
@@ -9,12 +13,24 @@ type TransitionOptions = {
   reason?: string;
 };
 
-const allowedTransitions: Record<FormalizationStatus, readonly FormalizationStatus[]> = {
-  PENDING: ['BANK_DETAILS_SUBMITTED', 'CANCELLED'],
+const allowedTransitions: Record<
+  FormalizationStatus,
+  readonly FormalizationStatus[]
+> = {
+  PENDING: [
+    'BANK_DETAILS_SUBMITTED',
+    'CANCELLED',
+  ],
 
-  BANK_DETAILS_SUBMITTED: ['READY_FOR_DISBURSEMENT', 'CANCELLED'],
+  BANK_DETAILS_SUBMITTED: [
+    'READY_FOR_DISBURSEMENT',
+    'CANCELLED',
+  ],
 
-  READY_FOR_DISBURSEMENT: ['DISBURSED', 'CANCELLED'],
+  READY_FOR_DISBURSEMENT: [
+    'DISBURSED',
+    'CANCELLED',
+  ],
 
   DISBURSED: [],
 
@@ -22,26 +38,55 @@ const allowedTransitions: Record<FormalizationStatus, readonly FormalizationStat
 };
 
 export class InvalidFormalizationStatusTransitionError extends Error {
-  constructor(fromStatus: FormalizationStatus, toStatus: FormalizationStatus) {
-    super(`Transição de formalização de ${fromStatus} para ${toStatus} não permitida.`);
+  constructor(
+    fromStatus: FormalizationStatus,
+    toStatus: FormalizationStatus,
+  ) {
+    super(
+      `Transição de formalização de ${fromStatus} para ${toStatus} não permitida.`,
+    );
 
-    this.name = 'InvalidFormalizationStatusTransitionError';
+    this.name =
+      'InvalidFormalizationStatusTransitionError';
   }
 }
 
 export class ConcurrentFormalizationStatusTransitionError extends Error {
   constructor() {
-    super('O status da formalização foi alterado por outra operação.');
+    super(
+      'O status da formalização foi alterado por outra operação.',
+    );
 
-    this.name = 'ConcurrentFormalizationStatusTransitionError';
+    this.name =
+      'ConcurrentFormalizationStatusTransitionError';
   }
 }
 
 export class FormalizationLockedError extends Error {
   constructor() {
-    super('Esta formalização não permite mais alteração dos dados bancários.');
+    super(
+      'Esta formalização não permite mais alteração dos dados bancários.',
+    );
 
-    this.name = 'FormalizationLockedError';
+    this.name =
+      'FormalizationLockedError';
+  }
+}
+
+/*
+ * Invariante central do novo fluxo:
+ *
+ * nenhuma operação financeira pode
+ * avançar sem uma CreditOffer ACCEPTED.
+ */
+export class FormalizationOfferNotAcceptedError extends Error {
+  constructor() {
+    super(
+      'A formalização não pode avançar sem uma proposta de crédito aceita.',
+    );
+
+    this.name =
+      'FormalizationOfferNotAcceptedError';
   }
 }
 
@@ -50,142 +95,129 @@ export async function transitionFormalizationStatus(
   toStatus: FormalizationStatus,
   options: TransitionOptions = {},
 ) {
-  return prisma.$transaction(async (tx) => {
-    const formalization = await tx.creditFormalization.findUnique({
-      where: {
-        id: formalizationId,
-      },
+  return prisma.$transaction(
+    async (tx) => {
+      const formalization =
+        await tx.creditFormalization.findUnique({
+          where: {
+            id:
+              formalizationId,
+          },
 
-      select: {
-        id: true,
-        status: true,
-      },
-    });
+          select: {
+            id: true,
 
-    if (!formalization) {
-      throw new Error('Formalização não encontrada.');
-    }
+            applicationId:
+              true,
 
-    const fromStatus = formalization.status;
+            status: true,
+          },
+        });
 
-    const transitionAllowed = allowedTransitions[fromStatus].includes(toStatus);
+      if (!formalization) {
+        throw new Error(
+          'Formalização não encontrada.',
+        );
+      }
 
-    if (!transitionAllowed) {
-      throw new InvalidFormalizationStatusTransitionError(fromStatus, toStatus);
-    }
+      /*
+       * CANCELLED continua permitido mesmo
+       * para registros legados.
+       *
+       * Qualquer avanço operacional exige
+       * proposta aceita.
+       */
+      if (
+        toStatus !==
+        'CANCELLED'
+      ) {
+        const acceptedOffer =
+          await tx.creditOffer.findFirst({
+            where: {
+              applicationId:
+                formalization.applicationId,
 
-    const now = new Date();
+              status:
+                'ACCEPTED',
+            },
 
-    const updateData = {
-      status: toStatus,
+            select: {
+              id: true,
+            },
+          });
 
-      ...(toStatus === 'READY_FOR_DISBURSEMENT'
-        ? {
-            readyAt: now,
-          }
-        : {}),
+        if (!acceptedOffer) {
+          throw new FormalizationOfferNotAcceptedError();
+        }
+      }
 
-      ...(toStatus === 'DISBURSED'
-        ? {
-            disbursedAt: now,
-          }
-        : {}),
+      const fromStatus =
+        formalization.status;
 
-      ...(toStatus === 'CANCELLED'
-        ? {
-            cancelledAt: now,
-          }
-        : {}),
-    };
+      const transitionAllowed =
+        allowedTransitions[
+          fromStatus
+        ].includes(
+          toStatus,
+        );
 
-    const updateResult = await tx.creditFormalization.updateMany({
-      where: {
-        id: formalizationId,
-        status: fromStatus,
-      },
+      if (!transitionAllowed) {
+        throw new InvalidFormalizationStatusTransitionError(
+          fromStatus,
+          toStatus,
+        );
+      }
 
-      data: updateData,
-    });
+      const now =
+        new Date();
 
-    if (updateResult.count !== 1) {
-      throw new ConcurrentFormalizationStatusTransitionError();
-    }
+      const updateData = {
+        status:
+          toStatus,
 
-    await tx.formalizationStatusHistory.create({
-      data: {
-        formalizationId,
+        ...(toStatus ===
+        'READY_FOR_DISBURSEMENT'
+          ? {
+              readyAt:
+                now,
+            }
+          : {}),
 
-        fromStatus,
-        toStatus,
+        ...(toStatus ===
+        'DISBURSED'
+          ? {
+              disbursedAt:
+                now,
+            }
+          : {}),
 
-        actorType: options.actorType ?? 'SYSTEM',
+        ...(toStatus ===
+        'CANCELLED'
+          ? {
+              cancelledAt:
+                now,
+            }
+          : {}),
+      };
 
-        actorId: options.actorId ?? null,
+      const updateResult =
+        await tx.creditFormalization.updateMany({
+          where: {
+            id:
+              formalizationId,
 
-        reason: options.reason ?? null,
-      },
-    });
+            status:
+              fromStatus,
+          },
 
-    return tx.creditFormalization.findUnique({
-      where: {
-        id: formalizationId,
-      },
+          data:
+            updateData,
+        });
 
-      select: {
-        id: true,
-        status: true,
-
-        bankDataSubmittedAt: true,
-
-        readyAt: true,
-        disbursedAt: true,
-        cancelledAt: true,
-
-        updatedAt: true,
-      },
-    });
-  });
-}
-
-export async function submitFormalizationBankData(
-  formalizationId: string,
-  bankDataEncrypted: string,
-) {
-  return prisma.$transaction(async (tx) => {
-    const formalization = await tx.creditFormalization.findUnique({
-      where: {
-        id: formalizationId,
-      },
-
-      select: {
-        id: true,
-        status: true,
-      },
-    });
-
-    if (!formalization) {
-      throw new Error('Formalização não encontrada.');
-    }
-
-    const now = new Date();
-
-    if (formalization.status === 'PENDING') {
-      const updateResult = await tx.creditFormalization.updateMany({
-        where: {
-          id: formalizationId,
-          status: 'PENDING',
-        },
-
-        data: {
-          bankDataEncrypted,
-
-          bankDataSubmittedAt: now,
-
-          status: 'BANK_DETAILS_SUBMITTED',
-        },
-      });
-
-      if (updateResult.count !== 1) {
+      if (
+        updateResult.count !==
+        1
+      ) {
         throw new ConcurrentFormalizationStatusTransitionError();
       }
 
@@ -193,71 +225,233 @@ export async function submitFormalizationBankData(
         data: {
           formalizationId,
 
-          fromStatus: 'PENDING',
+          fromStatus,
+          toStatus,
 
-          toStatus: 'BANK_DETAILS_SUBMITTED',
+          actorType:
+            options.actorType ??
+            'SYSTEM',
 
-          actorType: 'SYSTEM',
+          actorId:
+            options.actorId ??
+            null,
 
-          actorId: null,
-
-          reason: 'Dados bancários enviados pelo cliente.',
+          reason:
+            options.reason ??
+            null,
         },
       });
 
       return tx.creditFormalization.findUnique({
         where: {
-          id: formalizationId,
+          id:
+            formalizationId,
         },
 
         select: {
           id: true,
           status: true,
 
-          bankDataSubmittedAt: true,
+          bankDataSubmittedAt:
+            true,
 
-          updatedAt: true,
+          readyAt:
+            true,
+
+          disbursedAt:
+            true,
+
+          cancelledAt:
+            true,
+
+          updatedAt:
+            true,
         },
       });
-    }
+    },
+  );
+}
 
-    if (formalization.status === 'BANK_DETAILS_SUBMITTED') {
-      const updateResult = await tx.creditFormalization.updateMany({
-        where: {
-          id: formalizationId,
+export async function submitFormalizationBankData(
+  formalizationId: string,
+  bankDataEncrypted: string,
+) {
+  return prisma.$transaction(
+    async (tx) => {
+      const formalization =
+        await tx.creditFormalization.findUnique({
+          where: {
+            id:
+              formalizationId,
+          },
 
-          status: 'BANK_DETAILS_SUBMITTED',
-        },
+          select: {
+            id: true,
 
-        data: {
-          bankDataEncrypted,
+            applicationId:
+              true,
 
-          bankDataSubmittedAt: now,
-        },
-      });
+            status: true,
+          },
+        });
 
-      if (updateResult.count !== 1) {
-        throw new ConcurrentFormalizationStatusTransitionError();
+      if (!formalization) {
+        throw new Error(
+          'Formalização não encontrada.',
+        );
       }
 
-      return tx.creditFormalization.findUnique({
-        where: {
-          id: formalizationId,
-        },
+      /*
+       * Mesmo que uma DAL ou Server Action
+       * seja chamada incorretamente, os
+       * dados bancários não entram no fluxo
+       * sem aceite prévio da proposta.
+       */
+      const acceptedOffer =
+        await tx.creditOffer.findFirst({
+          where: {
+            applicationId:
+              formalization.applicationId,
 
-        select: {
-          id: true,
-          status: true,
+            status:
+              'ACCEPTED',
+          },
 
-          bankDataSubmittedAt: true,
+          select: {
+            id: true,
+          },
+        });
 
-          updatedAt: true,
-        },
-      });
-    }
+      if (!acceptedOffer) {
+        throw new FormalizationOfferNotAcceptedError();
+      }
 
-    throw new FormalizationLockedError();
-  });
+      const now =
+        new Date();
+
+      if (
+        formalization.status ===
+        'PENDING'
+      ) {
+        const updateResult =
+          await tx.creditFormalization.updateMany({
+            where: {
+              id:
+                formalizationId,
+
+              status:
+                'PENDING',
+            },
+
+            data: {
+              bankDataEncrypted,
+
+              bankDataSubmittedAt:
+                now,
+
+              status:
+                'BANK_DETAILS_SUBMITTED',
+            },
+          });
+
+        if (
+          updateResult.count !==
+          1
+        ) {
+          throw new ConcurrentFormalizationStatusTransitionError();
+        }
+
+        await tx.formalizationStatusHistory.create({
+          data: {
+            formalizationId,
+
+            fromStatus:
+              'PENDING',
+
+            toStatus:
+              'BANK_DETAILS_SUBMITTED',
+
+            actorType:
+              'SYSTEM',
+
+            actorId:
+              null,
+
+            reason:
+              'Dados bancários enviados pelo cliente.',
+          },
+        });
+
+        return tx.creditFormalization.findUnique({
+          where: {
+            id:
+              formalizationId,
+          },
+
+          select: {
+            id: true,
+            status: true,
+
+            bankDataSubmittedAt:
+              true,
+
+            updatedAt:
+              true,
+          },
+        });
+      }
+
+      if (
+        formalization.status ===
+        'BANK_DETAILS_SUBMITTED'
+      ) {
+        const updateResult =
+          await tx.creditFormalization.updateMany({
+            where: {
+              id:
+                formalizationId,
+
+              status:
+                'BANK_DETAILS_SUBMITTED',
+            },
+
+            data: {
+              bankDataEncrypted,
+
+              bankDataSubmittedAt:
+                now,
+            },
+          });
+
+        if (
+          updateResult.count !==
+          1
+        ) {
+          throw new ConcurrentFormalizationStatusTransitionError();
+        }
+
+        return tx.creditFormalization.findUnique({
+          where: {
+            id:
+              formalizationId,
+          },
+
+          select: {
+            id: true,
+            status: true,
+
+            bankDataSubmittedAt:
+              true,
+
+            updatedAt:
+              true,
+          },
+        });
+      }
+
+      throw new FormalizationLockedError();
+    },
+  );
 }
 
 export async function registerFormalizationDisbursement(
@@ -265,79 +459,149 @@ export async function registerFormalizationDisbursement(
   disbursementReferenceEncrypted: string,
   options: TransitionOptions = {},
 ) {
-  return prisma.$transaction(async (tx) => {
-    const formalization = await tx.creditFormalization.findUnique({
-      where: {
-        id: formalizationId,
-      },
+  return prisma.$transaction(
+    async (tx) => {
+      const formalization =
+        await tx.creditFormalization.findUnique({
+          where: {
+            id:
+              formalizationId,
+          },
 
-      select: {
-        id: true,
-        status: true,
-      },
-    });
+          select: {
+            id: true,
 
-    if (!formalization) {
-      throw new Error('Formalização não encontrada.');
-    }
+            applicationId:
+              true,
 
-    const fromStatus = formalization.status;
+            status: true,
+          },
+        });
 
-    const toStatus: FormalizationStatus = 'DISBURSED';
+      if (!formalization) {
+        throw new Error(
+          'Formalização não encontrada.',
+        );
+      }
 
-    if (fromStatus !== 'READY_FOR_DISBURSEMENT') {
-      throw new InvalidFormalizationStatusTransitionError(fromStatus, toStatus);
-    }
+      /*
+       * DISBURSED representa apenas o
+       * registro interno de uma
+       * transferência que o operador
+       * confirma ter ocorrido fora deste
+       * sistema.
+       *
+       * Ainda assim, o registro não pode
+       * avançar sem oferta aceita.
+       */
+      const acceptedOffer =
+        await tx.creditOffer.findFirst({
+          where: {
+            applicationId:
+              formalization.applicationId,
 
-    const now = new Date();
+            status:
+              'ACCEPTED',
+          },
 
-    const updateResult = await tx.creditFormalization.updateMany({
-      where: {
-        id: formalizationId,
+          select: {
+            id: true,
+          },
+        });
 
-        status: 'READY_FOR_DISBURSEMENT',
-      },
+      if (!acceptedOffer) {
+        throw new FormalizationOfferNotAcceptedError();
+      }
 
-      data: {
-        status: 'DISBURSED',
+      const fromStatus =
+        formalization.status;
 
-        disbursementReferenceEncrypted,
+      const toStatus:
+        FormalizationStatus =
+        'DISBURSED';
 
-        disbursedAt: now,
-      },
-    });
+      if (
+        fromStatus !==
+        'READY_FOR_DISBURSEMENT'
+      ) {
+        throw new InvalidFormalizationStatusTransitionError(
+          fromStatus,
+          toStatus,
+        );
+      }
 
-    if (updateResult.count !== 1) {
-      throw new ConcurrentFormalizationStatusTransitionError();
-    }
+      const now =
+        new Date();
 
-    await tx.formalizationStatusHistory.create({
-      data: {
-        formalizationId,
+      const updateResult =
+        await tx.creditFormalization.updateMany({
+          where: {
+            id:
+              formalizationId,
 
-        fromStatus: 'READY_FOR_DISBURSEMENT',
+            status:
+              'READY_FOR_DISBURSEMENT',
+          },
 
-        toStatus: 'DISBURSED',
+          data: {
+            status:
+              'DISBURSED',
 
-        actorType: options.actorType ?? 'SYSTEM',
+            disbursementReferenceEncrypted,
 
-        actorId: options.actorId ?? null,
+            disbursedAt:
+              now,
+          },
+        });
 
-        reason: options.reason ?? null,
-      },
-    });
+      if (
+        updateResult.count !==
+        1
+      ) {
+        throw new ConcurrentFormalizationStatusTransitionError();
+      }
 
-    return tx.creditFormalization.findUnique({
-      where: {
-        id: formalizationId,
-      },
+      await tx.formalizationStatusHistory.create({
+        data: {
+          formalizationId,
 
-      select: {
-        id: true,
-        status: true,
-        disbursedAt: true,
-        updatedAt: true,
-      },
-    });
-  });
+          fromStatus:
+            'READY_FOR_DISBURSEMENT',
+
+          toStatus:
+            'DISBURSED',
+
+          actorType:
+            options.actorType ??
+            'SYSTEM',
+
+          actorId:
+            options.actorId ??
+            null,
+
+          reason:
+            options.reason ??
+            null,
+        },
+      });
+
+      return tx.creditFormalization.findUnique({
+        where: {
+          id:
+            formalizationId,
+        },
+
+        select: {
+          id: true,
+          status: true,
+
+          disbursedAt:
+            true,
+
+          updatedAt:
+            true,
+        },
+      });
+    },
+  );
 }
