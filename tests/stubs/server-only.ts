@@ -1,3 +1,2 @@
-// Stub exclusivo do ambiente Vitest.
-// O runtime de produção continua usando server-only normalmente.
+// Stub exclusivo do ambiente de testes.
 export {};

@@ -5,9 +5,7 @@ import {
 } from 'vitest';
 
 describe('infraestrutura de testes', () => {
-  it('executa testes TypeScript no ambiente Node', () => {
-    expect(
-      1 + 1,
-    ).toBe(2);
+  it('executa TypeScript no ambiente Node', () => {
+    expect(1 + 1).toBe(2);
   });
 });
