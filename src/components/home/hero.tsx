@@ -1,27 +1,43 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useMemo, useState } from 'react';
 
-import { calculateCreditSimulation, formatCurrency } from '@/lib/credit';
+import {
+  calculateCreditSimulation,
+  formatCurrency,
+} from '@/lib/credit';
 
 export function Hero() {
   const router = useRouter();
 
-  const [amount, setAmount] = useState(5000);
-  const [months, setMonths] = useState(12);
+  const [amount, setAmount] =
+    useState(5000);
 
+  const [months, setMonths] =
+    useState(12);
 
-  const simulation = useMemo(() => calculateCreditSimulation(amount, months), [amount, months]);
+  const simulation = useMemo(
+    () =>
+      calculateCreditSimulation(
+        amount,
+        months,
+      ),
+    [amount, months],
+  );
+
   function handleContinue() {
-    const params = new URLSearchParams({
-      valor: String(amount),
-      prazo: String(months),
-    });
+    const params =
+      new URLSearchParams({
+        valor: String(amount),
+        prazo: String(months),
+      });
 
-    router.push(`/solicitacao?${params.toString()}`);
+    router.push(
+      `/solicitacao?${params.toString()}`,
+    );
   }
-
 
   return (
     <section className="relative overflow-hidden bg-[#f7f8fa]">
@@ -48,11 +64,23 @@ export function Hero() {
               Simular meu crédito
             </a>
 
+            <Link
+              href="/acompanhar"
+              className="rounded-xl border border-blue-200 bg-white px-7 py-4 text-center text-base font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-50"
+            >
+              Acompanhar solicitação
+            </Link>
+          </div>
+
+          <div className="mt-5">
             <a
               href="#como-funciona"
-              className="rounded-xl border border-slate-300 bg-white px-7 py-4 text-center text-base font-semibold text-slate-700 transition hover:bg-slate-50"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-blue-700"
             >
-              Como funciona
+              Entenda como funciona
+              <span aria-hidden="true">
+                →
+              </span>
             </a>
           </div>
 
@@ -63,13 +91,20 @@ export function Hero() {
           </div>
         </div>
 
-        <div id="simulador" className="relative">
+        <div
+          id="simulador"
+          className="relative"
+        >
           <div className="rounded-[32px] border border-slate-200 bg-white p-8 shadow-2xl shadow-slate-200/60">
             <div>
-              <p className="text-sm font-medium text-slate-500">Quanto você precisa?</p>
+              <p className="text-sm font-medium text-slate-500">
+                Quanto você precisa?
+              </p>
 
               <p className="mt-3 text-4xl font-semibold tracking-tight text-[#0b1f33]">
-                {formatCurrency(amount)}
+                {formatCurrency(
+                  amount,
+                )}
               </p>
             </div>
 
@@ -80,22 +115,35 @@ export function Hero() {
                 max="10000"
                 step="100"
                 value={amount}
-                onChange={(event) => setAmount(Number(event.target.value))}
+                onChange={(event) =>
+                  setAmount(
+                    Number(
+                      event.target
+                        .value,
+                    ),
+                  )
+                }
                 className="w-full cursor-pointer accent-blue-600"
                 aria-label="Valor do crédito"
               />
 
               <div className="mt-3 flex justify-between text-xs text-slate-400">
                 <span>R$ 500</span>
-                <span>R$ 10.000</span>
+                <span>
+                  R$ 10.000
+                </span>
               </div>
             </div>
 
             <div className="mt-8">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-slate-500">Prazo</p>
+                <p className="text-sm font-medium text-slate-500">
+                  Prazo
+                </p>
 
-                <p className="font-semibold text-[#0b1f33]">{months} meses</p>
+                <p className="font-semibold text-[#0b1f33]">
+                  {months} meses
+                </p>
               </div>
 
               <input
@@ -104,46 +152,76 @@ export function Hero() {
                 max="24"
                 step="1"
                 value={months}
-                onChange={(event) => setMonths(Number(event.target.value))}
+                onChange={(event) =>
+                  setMonths(
+                    Number(
+                      event.target
+                        .value,
+                    ),
+                  )
+                }
                 className="mt-4 w-full cursor-pointer accent-blue-600"
                 aria-label="Prazo do crédito"
               />
 
               <div className="mt-3 flex justify-between text-xs text-slate-400">
                 <span>3 meses</span>
-                <span>24 meses</span>
+                <span>
+                  24 meses
+                </span>
               </div>
             </div>
 
             <div className="mt-8 rounded-2xl bg-slate-50 p-5">
               <div className="flex items-center justify-between border-b border-slate-200 pb-4">
-                <span className="text-sm text-slate-500">Parcela estimada</span>
+                <span className="text-sm text-slate-500">
+                  Parcela estimada
+                </span>
 
                 <span className="text-xl font-semibold text-[#0b1f33]">
-                  {formatCurrency(simulation.installment)}
+                  {formatCurrency(
+                    simulation.installment,
+                  )}
                 </span>
               </div>
 
               <div className="flex items-center justify-between border-b border-slate-200 py-4">
-                <span className="text-sm text-slate-500">Total estimado</span>
+                <span className="text-sm text-slate-500">
+                  Total estimado
+                </span>
 
                 <span className="font-semibold text-slate-800">
-                  {formatCurrency(simulation.totalAmount)}
+                  {formatCurrency(
+                    simulation.totalAmount,
+                  )}
                 </span>
               </div>
 
               <div className="flex items-center justify-between pt-4">
-                <span className="text-sm text-slate-500">Taxa ilustrativa</span>
+                <span className="text-sm text-slate-500">
+                  Taxa ilustrativa
+                </span>
 
                 <span className="font-semibold text-slate-800">
-                  {(simulation.monthlyRate * 100).toFixed(2).replace('.', ',')}% a.m.
+                  {(
+                    simulation.monthlyRate *
+                    100
+                  )
+                    .toFixed(2)
+                    .replace(
+                      '.',
+                      ',',
+                    )}
+                  % a.m.
                 </span>
               </div>
             </div>
 
             <button
               type="button"
-              onClick={handleContinue}
+              onClick={
+                handleContinue
+              }
               className="mt-7 w-full rounded-xl bg-blue-600 px-6 py-4 font-semibold text-white transition hover:bg-blue-700"
             >
               Continuar simulação
@@ -153,6 +231,19 @@ export function Hero() {
               Simulação meramente ilustrativa. Valores e condições finais dependem de análise e da
               proposta apresentada ao cliente.
             </p>
+
+            <div className="mt-5 border-t border-slate-100 pt-5 text-center">
+              <p className="text-xs text-slate-500">
+                Já iniciou uma solicitação?
+              </p>
+
+              <Link
+                href="/acompanhar"
+                className="mt-2 inline-flex text-sm font-semibold text-blue-600 transition hover:text-blue-700"
+              >
+                Consultar minha solicitação →
+              </Link>
+            </div>
           </div>
         </div>
       </div>
