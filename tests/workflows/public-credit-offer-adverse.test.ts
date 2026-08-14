@@ -1,0 +1,331 @@
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
+
+const mocks = vi.hoisted(() => {
+  const tx = {
+    creditOffer: {
+      findUnique: vi.fn(),
+      updateMany: vi.fn(),
+    },
+
+    creditOfferStatusHistory: {
+      create: vi.fn(),
+    },
+
+    creditFormalization: {
+      findUnique: vi.fn(),
+      upsert: vi.fn(),
+    },
+  };
+
+  const transaction = vi.fn();
+
+  return {
+    tx,
+    transaction,
+  };
+});
+
+vi.mock('@/lib/prisma', () => ({
+  prisma: {
+    $transaction: mocks.transaction,
+  },
+}));
+
+import {
+  CreditOfferFormalizationConflictError,
+  CreditOfferNotAvailableError,
+  CreditOfferNotFoundError,
+  decidePublicCreditOffer,
+} from '@/server/workflows/public-credit-offer';
+
+describe('public-credit-offer - casos adversos', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+
+    vi.setSystemTime(
+      new Date(
+        '2026-08-14T15:00:00.000Z',
+      ),
+    );
+
+    mocks.transaction.mockImplementation(
+      async (
+        callback: (
+          transactionClient: typeof mocks.tx,
+        ) => unknown,
+      ) => callback(mocks.tx),
+    );
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('bloqueia decisão quando a proposta não existe', async () => {
+    mocks.tx.creditOffer.findUnique.mockResolvedValue(
+      null,
+    );
+
+    await expect(
+      decidePublicCreditOffer({
+        applicationId:
+          'application-1',
+
+        version:
+          99,
+
+        decision:
+          'ACCEPT',
+      }),
+    ).rejects.toBeInstanceOf(
+      CreditOfferNotFoundError,
+    );
+
+    expect(
+      mocks.tx.creditOffer.updateMany,
+    ).not.toHaveBeenCalled();
+
+    expect(
+      mocks.tx.creditOfferStatusHistory.create,
+    ).not.toHaveBeenCalled();
+
+    expect(
+      mocks.tx.creditFormalization.upsert,
+    ).not.toHaveBeenCalled();
+  });
+
+  it('bloqueia decisão incompatível com proposta já aceita', async () => {
+    mocks.tx.creditOffer.findUnique.mockResolvedValue({
+      id: 'offer-1',
+      applicationId: 'application-1',
+      version: 1,
+      status: 'ACCEPTED',
+      expiresAt:
+        new Date(
+          '2026-08-20T15:00:00.000Z',
+        ),
+    });
+
+    await expect(
+      decidePublicCreditOffer({
+        applicationId:
+          'application-1',
+
+        version:
+          1,
+
+        decision:
+          'DECLINE',
+      }),
+    ).rejects.toBeInstanceOf(
+      CreditOfferNotAvailableError,
+    );
+
+    expect(
+      mocks.tx.creditOffer.updateMany,
+    ).not.toHaveBeenCalled();
+
+    expect(
+      mocks.tx.creditOfferStatusHistory.create,
+    ).not.toHaveBeenCalled();
+
+    expect(
+      mocks.tx.creditFormalization.upsert,
+    ).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    'CANCELLED',
+    'DISBURSED',
+  ] as const)(
+    'bloqueia novo aceite quando a formalização está %s',
+    async (status) => {
+      mocks.tx.creditOffer.findUnique.mockResolvedValue({
+        id: 'offer-1',
+        applicationId: 'application-1',
+        version: 1,
+        status: 'PRESENTED',
+        expiresAt:
+          new Date(
+            '2026-08-20T15:00:00.000Z',
+          ),
+      });
+
+      mocks.tx.creditFormalization.findUnique.mockResolvedValue({
+        id: 'formalization-1',
+        status,
+      });
+
+      await expect(
+        decidePublicCreditOffer({
+          applicationId:
+            'application-1',
+
+          version:
+            1,
+
+          decision:
+            'ACCEPT',
+        }),
+      ).rejects.toBeInstanceOf(
+        CreditOfferFormalizationConflictError,
+      );
+
+      expect(
+        mocks.tx.creditOffer.updateMany,
+      ).not.toHaveBeenCalled();
+
+      expect(
+        mocks.tx.creditOfferStatusHistory.create,
+      ).not.toHaveBeenCalled();
+
+      expect(
+        mocks.tx.creditFormalization.upsert,
+      ).not.toHaveBeenCalled();
+    },
+  );
+
+  it('detecta corrida concorrente no aceite', async () => {
+    mocks.tx.creditOffer.findUnique.mockResolvedValue({
+      id: 'offer-1',
+      applicationId: 'application-1',
+      version: 1,
+      status: 'PRESENTED',
+      expiresAt:
+        new Date(
+          '2026-08-20T15:00:00.000Z',
+        ),
+    });
+
+    mocks.tx.creditFormalization.findUnique.mockResolvedValue(
+      null,
+    );
+
+    /*
+     * Outra requisição mudou o status
+     * antes deste update condicional.
+     */
+    mocks.tx.creditOffer.updateMany.mockResolvedValue({
+      count: 0,
+    });
+
+    await expect(
+      decidePublicCreditOffer({
+        applicationId:
+          'application-1',
+
+        version:
+          1,
+
+        decision:
+          'ACCEPT',
+      }),
+    ).rejects.toBeInstanceOf(
+      CreditOfferNotAvailableError,
+    );
+
+    expect(
+      mocks.tx.creditOfferStatusHistory.create,
+    ).not.toHaveBeenCalled();
+
+    expect(
+      mocks.tx.creditFormalization.upsert,
+    ).not.toHaveBeenCalled();
+  });
+
+  it('detecta corrida concorrente na recusa', async () => {
+    mocks.tx.creditOffer.findUnique.mockResolvedValue({
+      id: 'offer-1',
+      applicationId: 'application-1',
+      version: 1,
+      status: 'PRESENTED',
+      expiresAt:
+        new Date(
+          '2026-08-20T15:00:00.000Z',
+        ),
+    });
+
+    mocks.tx.creditOffer.updateMany.mockResolvedValue({
+      count: 0,
+    });
+
+    await expect(
+      decidePublicCreditOffer({
+        applicationId:
+          'application-1',
+
+        version:
+          1,
+
+        decision:
+          'DECLINE',
+      }),
+    ).rejects.toBeInstanceOf(
+      CreditOfferNotAvailableError,
+    );
+
+    expect(
+      mocks.tx.creditOfferStatusHistory.create,
+    ).not.toHaveBeenCalled();
+
+    expect(
+      mocks.tx.creditFormalization.upsert,
+    ).not.toHaveBeenCalled();
+  });
+
+  it('não duplica auditoria quando outra requisição já expirou a proposta', async () => {
+    mocks.tx.creditOffer.findUnique.mockResolvedValue({
+      id: 'offer-1',
+      applicationId: 'application-1',
+      version: 1,
+      status: 'PRESENTED',
+      expiresAt:
+        new Date(
+          '2026-08-14T14:00:00.000Z',
+        ),
+    });
+
+    /*
+     * count 0 significa que outra operação
+     * já alterou a proposta antes daqui.
+     */
+    mocks.tx.creditOffer.updateMany.mockResolvedValue({
+      count: 0,
+    });
+
+    const result =
+      await decidePublicCreditOffer({
+        applicationId:
+          'application-1',
+
+        version:
+          1,
+
+        decision:
+          'ACCEPT',
+      });
+
+    expect(result).toEqual({
+      success:
+        false,
+
+      reason:
+        'EXPIRED',
+    });
+
+    expect(
+      mocks.tx.creditOfferStatusHistory.create,
+    ).not.toHaveBeenCalled();
+
+    expect(
+      mocks.tx.creditFormalization.upsert,
+    ).not.toHaveBeenCalled();
+  });
+});
