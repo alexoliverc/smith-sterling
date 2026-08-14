@@ -4,6 +4,7 @@
   "description": "Plataforma digital da Smith Sterling.",
   "main": "index.js",
   "scripts": {
+    "status:review": "tsx scripts/mark-under-review.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "next dev",
     "build": "next build",
