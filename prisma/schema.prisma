@@ -104,7 +104,8 @@ model CreditFormalization {
 
   status FormalizationStatus @default(PENDING)
 
-  bankDataEncrypted String? @db.Text
+  bankDataEncrypted              String? @db.Text
+  disbursementReferenceEncrypted String? @db.Text
 
   bankDataSubmittedAt DateTime?
   readyAt             DateTime?
