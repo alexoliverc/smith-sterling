@@ -1,10 +1,15 @@
 import 'server-only';
 
 import type { ApplicationStatus, ApplicationStatusActor } from '@/generated/prisma/client';
-
 import { prisma } from '@/lib/prisma';
 
-const allowedTransitions: Record<ApplicationStatus, ApplicationStatus[]> = {
+type TransitionOptions = {
+  actorType?: ApplicationStatusActor;
+  actorId?: string;
+  reason?: string;
+};
+
+const allowedTransitions: Record<ApplicationStatus, readonly ApplicationStatus[]> = {
   DRAFT: ['SUBMITTED', 'CANCELLED'],
 
   SUBMITTED: ['UNDER_REVIEW', 'CANCELLED'],
@@ -12,21 +17,13 @@ const allowedTransitions: Record<ApplicationStatus, ApplicationStatus[]> = {
   UNDER_REVIEW: ['APPROVED', 'REJECTED', 'CANCELLED'],
 
   APPROVED: [],
-
   REJECTED: [],
-
   CANCELLED: [],
 };
 
-type TransitionApplicationStatusOptions = {
-  actorType?: ApplicationStatusActor;
-  actorId?: string;
-  reason?: string;
-};
-
 export class InvalidApplicationStatusTransitionError extends Error {
-  constructor(currentStatus: ApplicationStatus, nextStatus: ApplicationStatus) {
-    super(`Transição de ${currentStatus} para ${nextStatus} não permitida.`);
+  constructor(fromStatus: ApplicationStatus, toStatus: ApplicationStatus) {
+    super(`Transição de ${fromStatus} para ${toStatus} não permitida.`);
 
     this.name = 'InvalidApplicationStatusTransitionError';
   }
@@ -34,7 +31,7 @@ export class InvalidApplicationStatusTransitionError extends Error {
 
 export class ConcurrentApplicationStatusTransitionError extends Error {
   constructor() {
-    super('O status da solicitação foi alterado por outro processo.');
+    super('O status da solicitação foi alterado por outra operação.');
 
     this.name = 'ConcurrentApplicationStatusTransitionError';
   }
@@ -42,8 +39,8 @@ export class ConcurrentApplicationStatusTransitionError extends Error {
 
 export async function transitionApplicationStatus(
   applicationId: string,
-  nextStatus: ApplicationStatus,
-  options: TransitionApplicationStatusOptions = {},
+  toStatus: ApplicationStatus,
+  options: TransitionOptions = {},
 ) {
   return prisma.$transaction(async (tx) => {
     const application = await tx.creditApplication.findUnique({
@@ -54,30 +51,29 @@ export async function transitionApplicationStatus(
       select: {
         id: true,
         status: true,
-        publicProtocol: true,
       },
     });
 
     if (!application) {
-      throw new Error('Solicitação de crédito não encontrada.');
+      throw new Error('Solicitação não encontrada.');
     }
 
-    const currentStatus = application.status;
+    const fromStatus = application.status;
 
-    const allowed = allowedTransitions[currentStatus].includes(nextStatus);
+    const transitionAllowed = allowedTransitions[fromStatus].includes(toStatus);
 
-    if (!allowed) {
-      throw new InvalidApplicationStatusTransitionError(currentStatus, nextStatus);
+    if (!transitionAllowed) {
+      throw new InvalidApplicationStatusTransitionError(fromStatus, toStatus);
     }
 
     const updateResult = await tx.creditApplication.updateMany({
       where: {
-        id: application.id,
-        status: currentStatus,
+        id: applicationId,
+        status: fromStatus,
       },
 
       data: {
-        status: nextStatus,
+        status: toStatus,
       },
     });
 
@@ -87,22 +83,45 @@ export async function transitionApplicationStatus(
 
     await tx.applicationStatusHistory.create({
       data: {
-        applicationId: application.id,
+        applicationId,
 
-        fromStatus: currentStatus,
-        toStatus: nextStatus,
+        fromStatus,
+        toStatus,
 
         actorType: options.actorType ?? 'SYSTEM',
 
         actorId: options.actorId ?? null,
 
-        reason: options.reason?.trim() || null,
+        reason: options.reason ?? null,
       },
     });
 
-    return tx.creditApplication.findUniqueOrThrow({
+    /*
+     * A formalização só nasce depois
+     * de uma aprovação efetiva.
+     *
+     * O upsert garante que uma mesma
+     * solicitação nunca tenha duas
+     * formalizações.
+     */
+    if (toStatus === 'APPROVED') {
+      await tx.creditFormalization.upsert({
+        where: {
+          applicationId,
+        },
+
+        update: {},
+
+        create: {
+          applicationId,
+          status: 'PENDING',
+        },
+      });
+    }
+
+    return tx.creditApplication.findUnique({
       where: {
-        id: application.id,
+        id: applicationId,
       },
 
       select: {
