@@ -109,7 +109,10 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
               <Progress status={application.status} />
             </div>
 
-            <StatusContent status={application.status} />
+            <StatusContent
+              status={application.status}
+              protocol={protocol}
+            />
 
             <div className="mt-10 border-t border-slate-200 pt-6">
               <div className="flex flex-col gap-4 rounded-2xl bg-slate-50 p-5 sm:flex-row sm:items-center sm:justify-between">
@@ -237,7 +240,13 @@ function Progress({ status }: { status: ApplicationStatus }) {
   );
 }
 
-function StatusContent({ status }: { status: ApplicationStatus }) {
+function StatusContent({
+  status,
+  protocol,
+}: {
+  status: ApplicationStatus;
+  protocol: string;
+}) {
   if (status === 'DRAFT') {
     return (
       <StatusBox
@@ -285,6 +294,23 @@ function StatusContent({ status }: { status: ApplicationStatus }) {
               A aprovação apresentada nesta página não solicita pagamento antecipado para consulta
               do resultado.
             </p>
+            <Link
+              href={`/solicitacao/${encodeURIComponent(
+                protocol,
+              )}/formalizacao`}
+              className="group mt-6 flex w-full items-center justify-between rounded-xl bg-blue-600 px-5 py-4 text-sm font-semibold !text-white shadow-sm transition hover:bg-blue-700 hover:shadow-md sm:w-auto sm:min-w-72"
+            >
+              <span className="!text-white">
+                Continuar formalização
+              </span>
+
+              <span
+                aria-hidden="true"
+                className="ml-6 text-lg !text-white transition-transform group-hover:translate-x-1"
+              >
+                →
+              </span>
+            </Link>
           </div>
         </div>
       </div>
@@ -423,3 +449,4 @@ function getStatusPresentation(status: ApplicationStatus) {
       };
   }
 }
+
