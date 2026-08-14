@@ -13,6 +13,8 @@ out/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.*
+!.env.example
 
 # Logs
 *.log
@@ -36,3 +38,5 @@ tmp/
 
 # Testes
 coverage/
+
+/src/generated/prisma

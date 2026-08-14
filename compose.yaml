@@ -1,0 +1,32 @@
+services:
+  mysql:
+    image: mysql:8.4.11
+    container_name: smith-sterling-mysql
+
+    restart: unless-stopped
+
+    ports:
+      - '127.0.0.1:3306:3306'
+
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+
+    volumes:
+      - smith_sterling_mysql_data:/var/lib/mysql
+
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD --silent',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+volumes:
+  smith_sterling_mysql_data:

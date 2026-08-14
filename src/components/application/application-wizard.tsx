@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 
 import { applicationSchema, type ApplicationFormData } from '@/lib/schemas/application';
 
@@ -32,7 +32,7 @@ export function ApplicationWizard({ amount, months }: ApplicationWizardProps) {
     register,
     trigger,
     setValue,
-    watch,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm<ApplicationFormData>({
@@ -60,7 +60,9 @@ export function ApplicationWizard({ amount, months }: ApplicationWizardProps) {
     },
   });
 
-  const values = watch();
+  const values = useWatch({
+    control,
+  });
 
   async function nextStep() {
     const fields = stepFields[currentStep];

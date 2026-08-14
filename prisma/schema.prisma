@@ -1,0 +1,28 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum ApplicationStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+model CreditApplication {
+  id     String            @id @default(cuid())
+  status ApplicationStatus @default(DRAFT)
+
+  amount Int
+  months Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
