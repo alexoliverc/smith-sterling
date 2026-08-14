@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
+import { institution } from '@/config/institution';
 import { getPublicCreditOfferForSession } from '@/server/dal/public-credit-offer';
 
 import { OfferDecisionPanel } from './offer-decision-panel';
@@ -89,6 +90,11 @@ export default async function PublicCreditOfferPage({
       </PublicShell>
     );
   }
+
+  const institutionalIdentityReady =
+    !institution.document.isPlaceholder &&
+    !institution.address.isPlaceholder &&
+    !institution.support.emailIsPlaceholder;
 
   const effectivelyExpired =
     offer.status ===
@@ -229,6 +235,121 @@ export default async function PublicCreditOfferPage({
                 )}
               />
             </dl>
+          </div>
+
+          <div className="mt-8">
+            <h2 className="text-lg font-semibold text-[#071522]">
+              Composição do CET
+            </h2>
+
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+              <p className="text-sm leading-7 text-slate-600">
+                {offer.cetCompositionDescription ??
+                  'O detalhamento da composição do CET não está disponível nesta versão histórica da proposta.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-8">
+            <h2 className="text-lg font-semibold text-[#071522]">
+              Atraso e inadimplemento
+            </h2>
+
+            <dl className="mt-5 divide-y divide-slate-100 rounded-2xl border border-slate-200">
+              <OfferRow
+                label="Juros de mora"
+                value={
+                  offer.lateInterestMonthlyPercent !== null
+                    ? `${formatPercentage(
+                        offer.lateInterestMonthlyPercent,
+                      )}% a.m.`
+                    : 'Não informado nesta versão'
+                }
+              />
+
+              <OfferRow
+                label="Multa por atraso"
+                value={
+                  offer.latePenaltyPercent !== null
+                    ? `${formatPercentage(
+                        offer.latePenaltyPercent,
+                      )}%`
+                    : 'Não informado nesta versão'
+                }
+              />
+            </dl>
+
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200 p-5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  Outros encargos de atraso
+                </p>
+
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  {offer.lateOtherChargesDescription ??
+                    'Não informado nesta versão histórica da proposta.'}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 p-5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  Consequências do inadimplemento
+                </p>
+
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  {offer.defaultConsequences ??
+                    'Não informado nesta versão histórica da proposta.'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+            <p className="text-sm font-semibold text-emerald-950">
+              Liquidação antecipada
+            </p>
+
+            <p className="mt-2 text-sm leading-6 text-emerald-800">
+              Você poderá liquidar antecipadamente o débito, total ou parcialmente, com a redução proporcional dos juros e demais acréscimos aplicáveis, conforme a legislação e as condições da operação.
+            </p>
+          </div>
+
+          <div className="mt-8">
+            <h2 className="text-lg font-semibold text-[#071522]">
+              Identificação da credora
+            </h2>
+
+            {institutionalIdentityReady ? (
+              <div className="mt-5 rounded-2xl border border-slate-200 p-5">
+                <p className="font-semibold text-[#071522]">
+                  {institution.legalName}
+                </p>
+
+                <div className="mt-3 space-y-1 text-sm leading-6 text-slate-600">
+                  <p>
+                    CNPJ: {institution.document.value}
+                  </p>
+
+                  <p>
+                    Endereço: {institution.address.value}
+                  </p>
+
+                  <p>
+                    Contato eletrônico: {institution.support.email}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+                <p className="font-semibold text-amber-950">
+                  Dados institucionais ainda não configurados para produção
+                </p>
+
+                <p className="mt-2 text-sm leading-6 text-amber-800">
+                  Esta instalação ainda utiliza dados institucionais provisórios. CNPJ, endereço e contato oficiais deverão ser configurados antes da disponibilização comercial da plataforma.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="mt-8 rounded-2xl bg-slate-50 p-5">

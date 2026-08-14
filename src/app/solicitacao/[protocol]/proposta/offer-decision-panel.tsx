@@ -72,7 +72,7 @@ export function OfferDecisionPanel({
           />
 
           <span className="text-sm leading-6 text-slate-600">
-            Li as condições apresentadas nesta proposta, incluindo valores, prazo, taxas, CET, encargos, total da operação, vencimento e validade, e desejo continuar com a contratação.
+            Li as condições apresentadas nesta proposta, incluindo valores, prazo, taxas, CET e sua composição, encargos, total da operação, vencimento, validade, juros de mora, multa e demais condições de atraso, consequências do inadimplemento e informações sobre liquidação antecipada, e desejo continuar com a contratação.
           </span>
         </label>
 

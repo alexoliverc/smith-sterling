@@ -87,6 +87,13 @@ export async function getPublicCreditOfferForSession(
             annualRatePercent: true,
             cetAnnualPercent: true,
 
+            lateInterestMonthlyPercent: true,
+            latePenaltyPercent: true,
+
+            lateOtherChargesDescription: true,
+            defaultConsequences: true,
+            cetCompositionDescription: true,
+
             firstDueDate: true,
             expiresAt: true,
 
