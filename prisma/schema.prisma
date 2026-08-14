@@ -34,6 +34,21 @@ enum FormalizationStatus {
   CANCELLED
 }
 
+enum CreditOfferStatus {
+  DRAFT
+  PRESENTED
+  ACCEPTED
+  DECLINED
+  EXPIRED
+  CANCELLED
+}
+
+enum CreditOfferActor {
+  SYSTEM
+  OPERATOR
+  APPLICANT
+}
+
 model CreditApplication {
   id     String            @id @default(cuid())
   status ApplicationStatus @default(DRAFT)
@@ -48,6 +63,7 @@ model CreditApplication {
   applicantData ApplicantData?
   statusHistory ApplicationStatusHistory[]
   formalization CreditFormalization?
+  offers        CreditOffer[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -182,4 +198,72 @@ model ApplicationRecoveryRateLimitBucket {
 
   @@unique([keyHash, bucketStart])
   @@index([bucketStart])
+}
+
+model CreditOffer {
+  id String @id @default(cuid())
+
+  applicationId String
+  application   CreditApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  version Int
+
+  status CreditOfferStatus @default(DRAFT)
+
+  // Valores monetários são persistidos em centavos.
+  principalCents       Int
+  netDisbursementCents Int
+  installmentCents     Int
+  totalRepaymentCents  Int
+
+  // Encargos destacados para composição e auditoria.
+  iofCents       Int @default(0)
+  otherFeesCents Int @default(0)
+
+  months           Int
+  installmentCount Int
+
+  // Percentuais efetivos informados na proposta.
+  monthlyRatePercent Decimal @db.Decimal(12, 8)
+  annualRatePercent  Decimal @db.Decimal(12, 8)
+  cetAnnualPercent   Decimal @db.Decimal(12, 8)
+
+  firstDueDate DateTime
+  expiresAt    DateTime
+
+  termsVersion String @db.VarChar(50)
+
+  presentedAt DateTime?
+  acceptedAt  DateTime?
+  declinedAt  DateTime?
+  expiredAt   DateTime?
+  cancelledAt DateTime?
+
+  statusHistory CreditOfferStatusHistory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([applicationId, version])
+  @@index([applicationId, status])
+  @@index([status, expiresAt])
+}
+
+model CreditOfferStatusHistory {
+  id String @id @default(cuid())
+
+  offerId String
+  offer   CreditOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+
+  fromStatus CreditOfferStatus
+  toStatus   CreditOfferStatus
+
+  actorType CreditOfferActor @default(SYSTEM)
+  actorId   String?          @db.VarChar(191)
+
+  reason String? @db.VarChar(500)
+
+  createdAt DateTime @default(now())
+
+  @@index([offerId, createdAt])
 }
