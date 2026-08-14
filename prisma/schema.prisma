@@ -23,6 +23,33 @@ model CreditApplication {
   amount Int
   months Int
 
+  applicantData ApplicantData?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model ApplicantData {
+  id String @id @default(cuid())
+
+  applicationId String            @unique
+  application   CreditApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  nameEncrypted      String @db.Text
+  cpfEncrypted       String @db.Text
+  cpfLookupHash      String @db.Char(64)
+  birthDateEncrypted String @db.Text
+
+  emailEncrypted String @db.Text
+  phoneEncrypted String @db.Text
+
+  addressEncrypted String @db.Text
+
+  employmentEncrypted String @db.Text
+  incomeEncrypted     String @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([cpfLookupHash])
 }
