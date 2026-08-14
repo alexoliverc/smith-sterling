@@ -97,27 +97,11 @@ export async function transitionApplicationStatus(
     });
 
     /*
-     * A formalização só nasce depois
-     * de uma aprovação efetiva.
+     * A aprovação encerra somente a análise de crédito.
      *
-     * O upsert garante que uma mesma
-     * solicitação nunca tenha duas
-     * formalizações.
+     * A CreditFormalization passa a ser criada exclusivamente
+     * quando o cliente aceita uma CreditOffer válida.
      */
-    if (toStatus === 'APPROVED') {
-      await tx.creditFormalization.upsert({
-        where: {
-          applicationId,
-        },
-
-        update: {},
-
-        create: {
-          applicationId,
-          status: 'PENDING',
-        },
-      });
-    }
 
     return tx.creditApplication.findUnique({
       where: {
