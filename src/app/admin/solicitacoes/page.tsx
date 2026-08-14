@@ -1,6 +1,8 @@
+import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
+import type { ApplicationStatus } from '@/generated/prisma/client';
 import { formatCurrency } from '@/lib/credit';
 import { ADMIN_SESSION_COOKIE, findAdminSession } from '@/server/auth/admin-session';
 import { listAdminApplications } from '@/server/dal/admin-applications';
@@ -158,53 +160,74 @@ function ApplicationRow({
   protocol: string;
   amount: number;
   months: number;
-  status: 'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+  status: ApplicationStatus;
   submittedAt: Date;
 }) {
   const statusPresentation = getStatusPresentation(status);
 
+  const detailUrl = `/admin/solicitacoes/${encodeURIComponent(protocol)}`;
+
   return (
-    <div className="grid gap-5 px-6 py-5 transition hover:bg-slate-50 lg:grid-cols-[1.5fr_1fr_0.8fr_1fr_1.1fr] lg:items-center lg:gap-4">
-      <div>
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-400 lg:hidden">
-          Protocolo
-        </p>
+    <Link
+      href={detailUrl}
+      aria-label={`Abrir solicitação ${protocol}`}
+      className="group block cursor-pointer transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
+    >
+      <div className="grid gap-5 px-6 py-5 lg:grid-cols-[1.5fr_1fr_0.8fr_1fr_1.1fr] lg:items-center lg:gap-4">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-400 lg:hidden">
+            Protocolo
+          </p>
 
-        <p className="mt-1 font-mono text-sm font-semibold text-[#0b1f33] lg:mt-0">{protocol}</p>
+          <div className="mt-1 flex items-center gap-3 lg:mt-0">
+            <p className="font-mono text-sm font-semibold text-[#0b1f33]">{protocol}</p>
+
+            <span
+              aria-hidden="true"
+              className="text-slate-300 transition-transform duration-200 group-hover:translate-x-1 group-hover:text-blue-600"
+            >
+              →
+            </span>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-400 lg:hidden">
+            Valor
+          </p>
+
+          <p className="mt-1 font-medium text-slate-800 lg:mt-0">{formatCurrency(amount)}</p>
+        </div>
+
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-400 lg:hidden">
+            Prazo
+          </p>
+
+          <p className="mt-1 text-sm text-slate-700 lg:mt-0">{months} meses</p>
+        </div>
+
+        <div>
+          <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-400 lg:hidden">
+            Status
+          </p>
+
+          <span
+            className={`inline-flex rounded-full px-3 py-1.5 text-xs font-semibold ${statusPresentation.className}`}
+          >
+            {statusPresentation.label}
+          </span>
+        </div>
+
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-400 lg:hidden">
+            Recebida em
+          </p>
+
+          <p className="mt-1 text-sm text-slate-600 lg:mt-0">{formatDateTime(submittedAt)}</p>
+        </div>
       </div>
-
-      <div>
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-400 lg:hidden">
-          Valor
-        </p>
-
-        <p className="mt-1 font-medium text-slate-800 lg:mt-0">{formatCurrency(amount)}</p>
-      </div>
-
-      <div>
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-400 lg:hidden">
-          Prazo
-        </p>
-
-        <p className="mt-1 text-sm text-slate-700 lg:mt-0">{months} meses</p>
-      </div>
-
-      <div>
-        <span
-          className={`inline-flex rounded-full px-3 py-1.5 text-xs font-semibold ${statusPresentation.className}`}
-        >
-          {statusPresentation.label}
-        </span>
-      </div>
-
-      <div>
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-400 lg:hidden">
-          Recebida em
-        </p>
-
-        <p className="mt-1 text-sm text-slate-600 lg:mt-0">{formatDateTime(submittedAt)}</p>
-      </div>
-    </div>
+    </Link>
   );
 }
 

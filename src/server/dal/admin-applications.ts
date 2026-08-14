@@ -80,9 +80,7 @@ export async function getAdminApplicationByProtocol(protocol: string) {
     return null;
   }
 
-  const applicantData = application.applicantData;
-
-  if (!applicantData) {
+  if (!application.applicantData) {
     return {
       id: application.id,
       publicProtocol: application.publicProtocol,
@@ -101,6 +99,9 @@ export async function getAdminApplicationByProtocol(protocol: string) {
 
   const applicationId = application.id;
 
+  const applicantData = application.applicantData;
+
+
   const address = parseJsonObject(
     decryptPii(applicantData.addressEncrypted, `${applicationId}:address`),
   );
@@ -111,12 +112,19 @@ export async function getAdminApplicationByProtocol(protocol: string) {
 
   return {
     id: application.id,
+
     publicProtocol: application.publicProtocol,
+
     status: application.status,
+
     amount: application.amount,
+
     months: application.months,
+
     submittedAt: application.submittedAt,
+
     createdAt: application.createdAt,
+
     updatedAt: application.updatedAt,
 
     applicant: {
@@ -157,6 +165,20 @@ export async function getAdminApplicationByProtocol(protocol: string) {
 
     statusHistory: application.statusHistory,
   };
+}
+
+export async function findAdminApplicationForTransition(protocol: string) {
+  return prisma.creditApplication.findUnique({
+    where: {
+      publicProtocol: protocol,
+    },
+
+    select: {
+      id: true,
+      status: true,
+      publicProtocol: true,
+    },
+  });
 }
 
 function parseJsonObject(value: string): Record<string, unknown> {
