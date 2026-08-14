@@ -25,6 +25,12 @@ export async function listAdminApplications() {
       submittedAt: true,
       createdAt: true,
       updatedAt: true,
+
+      formalization: {
+        select: {
+          status: true,
+        },
+      },
     },
   });
 }
@@ -234,3 +240,4 @@ function readString(object: Record<string, unknown>, key: string) {
 
   return typeof value === 'string' ? value : '';
 }
+

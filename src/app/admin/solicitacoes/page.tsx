@@ -134,6 +134,7 @@ export default async function AdminApplicationsPage() {
                     months={application.months}
                     status={application.status}
                     submittedAt={application.submittedAt ?? application.createdAt}
+                    formalizationStatus={application.formalization?.status ?? null}
                   />
                 ))}
               </div>
@@ -155,22 +156,42 @@ function MetricCard({ label, value }: { label: string; value: number }) {
   );
 }
 
+type FormalizationStatusValue =
+  | 'PENDING'
+  | 'BANK_DETAILS_SUBMITTED'
+  | 'READY_FOR_DISBURSEMENT'
+  | 'DISBURSED'
+  | 'CANCELLED';
+
 function ApplicationRow({
   protocol,
   amount,
   months,
   status,
   submittedAt,
+  formalizationStatus,
 }: {
   protocol: string;
   amount: number;
   months: number;
   status: ApplicationStatus;
   submittedAt: Date;
+  formalizationStatus: FormalizationStatusValue | null;
 }) {
-  const statusPresentation = getStatusPresentation(status);
+  const statusPresentation =
+    getStatusPresentation(status);
 
-  const detailUrl = `/admin/solicitacoes/${encodeURIComponent(protocol)}`;
+  const formalizationPresentation =
+    status === 'APPROVED'
+      ? getFormalizationPresentation(
+          formalizationStatus,
+        )
+      : null;
+
+  const detailUrl =
+    `/admin/solicitacoes/${encodeURIComponent(
+      protocol,
+    )}`;
 
   return (
     <Link
@@ -185,7 +206,9 @@ function ApplicationRow({
           </p>
 
           <div className="mt-1 flex items-center gap-3 lg:mt-0">
-            <p className="font-mono text-sm font-semibold text-[#0b1f33]">{protocol}</p>
+            <p className="font-mono text-sm font-semibold text-[#0b1f33]">
+              {protocol}
+            </p>
 
             <span
               aria-hidden="true"
@@ -201,7 +224,9 @@ function ApplicationRow({
             Valor
           </p>
 
-          <p className="mt-1 font-medium text-slate-800 lg:mt-0">{formatCurrency(amount)}</p>
+          <p className="mt-1 font-medium text-slate-800 lg:mt-0">
+            {formatCurrency(amount)}
+          </p>
         </div>
 
         <div>
@@ -209,7 +234,9 @@ function ApplicationRow({
             Prazo
           </p>
 
-          <p className="mt-1 text-sm text-slate-700 lg:mt-0">{months} meses</p>
+          <p className="mt-1 text-sm text-slate-700 lg:mt-0">
+            {months} meses
+          </p>
         </div>
 
         <div>
@@ -222,6 +249,14 @@ function ApplicationRow({
           >
             {statusPresentation.label}
           </span>
+
+          {formalizationPresentation && (
+            <p
+              className={`mt-2 text-xs font-semibold ${formalizationPresentation.className}`}
+            >
+              {formalizationPresentation.label}
+            </p>
+          )}
         </div>
 
         <div>
@@ -229,13 +264,56 @@ function ApplicationRow({
             Recebida em
           </p>
 
-          <p className="mt-1 text-sm text-slate-600 lg:mt-0">{formatDateTime(submittedAt)}</p>
+          <p className="mt-1 text-sm text-slate-600 lg:mt-0">
+            {formatDateTime(submittedAt)}
+          </p>
         </div>
       </div>
     </Link>
   );
 }
 
+function getFormalizationPresentation(
+  status: FormalizationStatusValue | null,
+) {
+  switch (status) {
+    case 'PENDING':
+      return {
+        label: '• Aguardando dados bancários',
+        className: 'text-amber-700',
+      };
+
+    case 'BANK_DETAILS_SUBMITTED':
+      return {
+        label: '• Dados bancários recebidos',
+        className: 'text-blue-700',
+      };
+
+    case 'READY_FOR_DISBURSEMENT':
+      return {
+        label: '• Pronta para liberação',
+        className: 'text-violet-700',
+      };
+
+    case 'DISBURSED':
+      return {
+        label: '✓ Crédito liberado',
+        className: 'text-emerald-700',
+      };
+
+    case 'CANCELLED':
+      return {
+        label: '• Formalização encerrada',
+        className: 'text-slate-500',
+      };
+
+    default:
+      return {
+        label: '• Formalização pendente',
+        className: 'text-slate-500',
+      };
+  }
+}
 function getStatusPresentation(
   status: 'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'CANCELLED',
 ) {
@@ -295,3 +373,4 @@ function formatRole(role: 'SUPER_ADMIN' | 'ANALYST') {
       return 'Analista';
   }
 }
+
