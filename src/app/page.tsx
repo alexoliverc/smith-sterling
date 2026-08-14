@@ -1,11 +1,23 @@
+import { Hero } from '@/components/home/hero';
+import { HowItWorks } from '@/components/home/how-it-works';
+import { Security } from '@/components/home/security';
+import { TrustBar } from '@/components/home/trust-bar';
+import { Footer } from '@/components/layout/footer';
+import { Header } from '@/components/layout/header';
+
 export default function Home() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-950">
-      <div className="text-center">
-        <h1 className="text-5xl font-bold tracking-tight text-white">Smith Sterling</h1>
+    <>
+      <Header />
 
-        <p className="mt-4 text-lg text-slate-400">Plataforma de crédito em desenvolvimento.</p>
-      </div>
-    </main>
+      <main>
+        <Hero />
+        <TrustBar />
+        <HowItWorks />
+        <Security />
+      </main>
+
+      <Footer />
+    </>
   );
 }
