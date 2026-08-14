@@ -24,19 +24,33 @@ export function Header() {
         </Link>
 
         <nav className="hidden items-center gap-7 lg:flex">
-          <a
+          <Link
+            href="/#como-funciona"
             className="text-sm font-medium text-slate-600 transition hover:text-slate-950"
-            href="#como-funciona"
           >
             Como funciona
-          </a>
+          </Link>
 
-          <a
+          <Link
+            href="/#seguranca"
             className="text-sm font-medium text-slate-600 transition hover:text-slate-950"
-            href="#seguranca"
           >
             Segurança
-          </a>
+          </Link>
+
+          <Link
+            href="/sobre"
+            className="text-sm font-medium text-slate-600 transition hover:text-slate-950"
+          >
+            Sobre
+          </Link>
+
+          <Link
+            href="/contato"
+            className="text-sm font-medium text-slate-600 transition hover:text-slate-950"
+          >
+            Contato
+          </Link>
 
           <Link
             href="/acompanhar"
@@ -44,25 +58,18 @@ export function Header() {
           >
             Acompanhar
           </Link>
-
-          <a
-            className="text-sm font-medium text-slate-600 transition hover:text-slate-950"
-            href="#ajuda"
-          >
-            Ajuda
-          </a>
         </nav>
 
         <Link
-          href="/acompanhar"
-          className="shrink-0 rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 sm:px-5"
+          href="/solicitacao"
+          className="shrink-0 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 sm:px-5"
         >
           <span className="sm:hidden">
-            Acompanhar
+            Solicitar
           </span>
 
           <span className="hidden sm:inline">
-            Acompanhar solicitação
+            Solicitar crédito
           </span>
         </Link>
       </div>
