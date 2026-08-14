@@ -1,7 +1,8 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useState, type ReactNode } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 
 import { createCreditApplication } from '@/app/solicitacao/actions';
@@ -14,6 +15,8 @@ type ApplicationWizardProps = {
   months: number;
 };
 
+const TOTAL_STEPS = 5;
+
 const stepFields: Record<number, Array<keyof ApplicationFormData>> = {
   1: ['name', 'cpf', 'birthDate'],
   2: ['email', 'phone'],
@@ -22,13 +25,13 @@ const stepFields: Record<number, Array<keyof ApplicationFormData>> = {
 };
 
 export function ApplicationWizard({ amount, months }: ApplicationWizardProps) {
+  const router = useRouter();
+
   const [currentStep, setCurrentStep] = useState(1);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [submitError, setSubmitError] = useState<string | null>(null);
-
-  const [applicationId, setApplicationId] = useState<string | null>(null);
 
   const {
     register,
@@ -66,23 +69,29 @@ export function ApplicationWizard({ amount, months }: ApplicationWizardProps) {
     control,
   });
 
+  const progress = (currentStep / TOTAL_STEPS) * 100;
+
   async function nextStep() {
+    setSubmitError(null);
+
     const fields = stepFields[currentStep];
 
     if (!fields) {
       return;
     }
 
-    const valid = await trigger(fields);
+    const isValid = await trigger(fields);
 
-    if (!valid) {
+    if (!isValid) {
       return;
     }
 
-    setCurrentStep((step) => Math.min(step + 1, 5));
+    setCurrentStep((step) => Math.min(step + 1, TOTAL_STEPS));
   }
 
   function previousStep() {
+    setSubmitError(null);
+
     setCurrentStep((step) => Math.max(step - 1, 1));
   }
 
@@ -91,19 +100,18 @@ export function ApplicationWizard({ amount, months }: ApplicationWizardProps) {
     setIsSubmitting(true);
 
     try {
-      const result = await createCreditApplication(amount, months);
+      const result = await createCreditApplication({
+        amount,
+        months,
+        applicant: data,
+      });
 
-      if ('message' in result) {
+      if (!('protocol' in result)) {
         setSubmitError(result.message);
         return;
       }
 
-      setApplicationId(result.applicationId);
-
-      console.log('Solicitação criada no backend:', result.applicationId);
-
-      // Os dados pessoais permanecem somente em memória nesta etapa.
-      void data;
+      router.push(`/solicitacao/${encodeURIComponent(result.protocol)}/analise`);
     } catch (error) {
       console.error('Erro inesperado ao criar solicitação:', error);
 
@@ -113,49 +121,13 @@ export function ApplicationWizard({ amount, months }: ApplicationWizardProps) {
     }
   }
 
-  const progress = `${currentStep * 20}%`;
-
-  if (applicationId) {
-    return (
-      <section>
-        <div className="rounded-3xl border border-slate-200 bg-white p-8 md:p-10">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-xl text-emerald-700">
-            ✓
-          </div>
-
-          <p className="mt-8 text-sm font-semibold uppercase tracking-[0.14em] text-emerald-700">
-            Solicitação iniciada
-          </p>
-
-          <h1 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-[#0b1f33]">
-            Registro criado com sucesso.
-          </h1>
-
-          <p className="mt-4 max-w-2xl text-lg leading-8 text-slate-600">
-            O registro estrutural da sua solicitação foi criado no servidor.
-          </p>
-
-          <div className="mt-8 rounded-2xl bg-slate-50 p-5">
-            <p className="text-sm text-slate-500">Identificador da solicitação</p>
-
-            <p className="mt-2 break-all font-mono text-sm font-medium text-slate-900">
-              {applicationId}
-            </p>
-          </div>
-
-          <p className="mt-6 text-sm leading-6 text-slate-500">
-            Os dados cadastrais ainda não foram persistidos nesta etapa.
-          </p>
-        </div>
-      </section>
-    );
-  }
-
   return (
     <section>
       <div className="mb-10">
         <div className="flex items-center justify-between gap-6">
-          <p className="text-sm font-semibold text-blue-600">ETAPA {currentStep} DE 5</p>
+          <p className="text-sm font-semibold text-blue-600">
+            ETAPA {currentStep} DE {TOTAL_STEPS}
+          </p>
 
           <p className="text-right text-sm text-slate-500">
             {amount.toLocaleString('pt-BR', {
@@ -171,7 +143,7 @@ export function ApplicationWizard({ amount, months }: ApplicationWizardProps) {
           <div
             className="h-full rounded-full bg-blue-600 transition-all duration-300"
             style={{
-              width: progress,
+              width: `${progress}%`,
             }}
           />
         </div>
@@ -187,7 +159,7 @@ export function ApplicationWizard({ amount, months }: ApplicationWizardProps) {
             <StepHeader
               eyebrow="Identificação"
               title="Conte um pouco sobre você."
-              description="Precisamos destas informações para iniciar sua solicitação."
+              description="Precisamos destas informações para iniciar sua solicitação de crédito."
             />
 
             <Fields>
@@ -205,8 +177,11 @@ export function ApplicationWizard({ amount, months }: ApplicationWizardProps) {
                 <input
                   {...register('cpf', {
                     onChange(event) {
-                      setValue('cpf', formatCpf(event.target.value), {
+                      const formattedCpf = formatCpf(event.target.value);
+
+                      setValue('cpf', formattedCpf, {
                         shouldDirty: true,
+                        shouldValidate: false,
                       });
                     },
                   })}
@@ -220,7 +195,12 @@ export function ApplicationWizard({ amount, months }: ApplicationWizardProps) {
               </Field>
 
               <Field label="Data de nascimento" error={errors.birthDate?.message}>
-                <input {...register('birthDate')} type="date" className={inputClass} />
+                <input
+                  {...register('birthDate')}
+                  type="date"
+                  autoComplete="bday"
+                  className={inputClass}
+                />
               </Field>
             </Fields>
           </>
@@ -249,8 +229,11 @@ export function ApplicationWizard({ amount, months }: ApplicationWizardProps) {
                 <input
                   {...register('phone', {
                     onChange(event) {
-                      setValue('phone', formatPhone(event.target.value), {
+                      const formattedPhone = formatPhone(event.target.value);
+
+                      setValue('phone', formattedPhone, {
                         shouldDirty: true,
+                        shouldValidate: false,
                       });
                     },
                   })}
@@ -279,13 +262,17 @@ export function ApplicationWizard({ amount, months }: ApplicationWizardProps) {
                 <input
                   {...register('cep', {
                     onChange(event) {
-                      setValue('cep', formatCep(event.target.value), {
+                      const formattedCep = formatCep(event.target.value);
+
+                      setValue('cep', formattedCep, {
                         shouldDirty: true,
+                        shouldValidate: false,
                       });
                     },
                   })}
                   type="text"
                   inputMode="numeric"
+                  autoComplete="postal-code"
                   maxLength={9}
                   placeholder="00000-000"
                   className={inputClass}
@@ -296,7 +283,7 @@ export function ApplicationWizard({ amount, months }: ApplicationWizardProps) {
                 <input
                   {...register('street')}
                   type="text"
-                  autoComplete="street-address"
+                  autoComplete="address-line1"
                   placeholder="Nome da rua ou avenida"
                   className={inputClass}
                 />
@@ -307,16 +294,17 @@ export function ApplicationWizard({ amount, months }: ApplicationWizardProps) {
                   <input
                     {...register('number')}
                     type="text"
+                    autoComplete="address-line2"
                     placeholder="Número"
                     className={inputClass}
                   />
                 </Field>
 
-                <Field label="Complemento">
+                <Field label="Complemento" error={errors.complement?.message}>
                   <input
                     {...register('complement')}
                     type="text"
-                    placeholder="Apartamento, bloco..."
+                    placeholder="Apartamento, bloco, casa..."
                     className={inputClass}
                   />
                 </Field>
@@ -336,6 +324,7 @@ export function ApplicationWizard({ amount, months }: ApplicationWizardProps) {
                   <input
                     {...register('city')}
                     type="text"
+                    autoComplete="address-level2"
                     placeholder="Cidade"
                     className={inputClass}
                   />
@@ -345,12 +334,19 @@ export function ApplicationWizard({ amount, months }: ApplicationWizardProps) {
                   <input
                     {...register('state', {
                       onChange(event) {
-                        setValue('state', event.target.value.toUpperCase().slice(0, 2), {
+                        const formattedState = event.target.value
+                          .replace(/[^a-zA-Z]/g, '')
+                          .toUpperCase()
+                          .slice(0, 2);
+
+                        setValue('state', formattedState, {
                           shouldDirty: true,
+                          shouldValidate: false,
                         });
                       },
                     })}
                     type="text"
+                    autoComplete="address-level1"
                     maxLength={2}
                     placeholder="BA"
                     className={inputClass}
@@ -366,18 +362,24 @@ export function ApplicationWizard({ amount, months }: ApplicationWizardProps) {
             <StepHeader
               eyebrow="Perfil financeiro"
               title="Conte sobre sua renda."
-              description="Estas informações serão consideradas na futura análise da solicitação."
+              description="Estas informações serão consideradas durante a análise da solicitação."
             />
 
             <Fields>
               <Field label="Situação profissional" error={errors.employmentType?.message}>
                 <select {...register('employmentType')} className={inputClass}>
                   <option value="">Selecione</option>
+
                   <option value="clt">Empregado CLT</option>
+
                   <option value="autonomo">Autônomo</option>
+
                   <option value="empresario">Empresário</option>
+
                   <option value="servidor">Servidor público</option>
+
                   <option value="aposentado">Aposentado / Pensionista</option>
+
                   <option value="outro">Outro</option>
                 </select>
               </Field>
@@ -386,6 +388,7 @@ export function ApplicationWizard({ amount, months }: ApplicationWizardProps) {
                 <input
                   {...register('occupation')}
                   type="text"
+                  autoComplete="organization-title"
                   placeholder="Informe sua profissão ou ocupação"
                   className={inputClass}
                 />
@@ -395,14 +398,18 @@ export function ApplicationWizard({ amount, months }: ApplicationWizardProps) {
                 <input
                   {...register('monthlyIncome', {
                     onChange(event) {
-                      setValue('monthlyIncome', formatIncome(event.target.value), {
+                      const formattedIncome = formatIncome(event.target.value);
+
+                      setValue('monthlyIncome', formattedIncome, {
                         shouldDirty: true,
+                        shouldValidate: false,
                       });
                     },
                   })}
                   type="text"
                   inputMode="numeric"
-                  placeholder="R$ 0"
+                  autoComplete="off"
+                  placeholder="R$ 0,00"
                   className={inputClass}
                 />
               </Field>
@@ -415,7 +422,7 @@ export function ApplicationWizard({ amount, months }: ApplicationWizardProps) {
             <StepHeader
               eyebrow="Revisão"
               title="Confira suas informações."
-              description="Revise os dados antes de prosseguir para a próxima fase."
+              description="Revise os dados antes de enviar sua solicitação para análise."
             />
 
             <div className="mt-10 grid gap-4">
@@ -439,6 +446,8 @@ export function ApplicationWizard({ amount, months }: ApplicationWizardProps) {
                 })}
               />
 
+              <ReviewItem label="CEP" value={values.cep} />
+
               <ReviewItem label="Cidade" value={formatCity(values.city, values.state)} />
 
               <ReviewItem
@@ -446,20 +455,40 @@ export function ApplicationWizard({ amount, months }: ApplicationWizardProps) {
                 value={formatEmploymentType(values.employmentType)}
               />
 
-              <ReviewItem label="Ocupação" value={values.occupation} />
+              <ReviewItem label="Profissão / ocupação" value={values.occupation} />
 
               <ReviewItem label="Renda declarada" value={values.monthlyIncome} />
+
+              <ReviewItem
+                label="Valor solicitado"
+                value={amount.toLocaleString('pt-BR', {
+                  style: 'currency',
+                  currency: 'BRL',
+                })}
+              />
+
+              <ReviewItem label="Prazo" value={`${months} meses`} />
+            </div>
+
+            <div className="mt-8 rounded-2xl border border-blue-100 bg-blue-50 p-5">
+              <p className="text-sm leading-6 text-slate-600">
+                Ao prosseguir, sua solicitação será enviada para análise. O envio não representa
+                aprovação automática ou garantia de concessão de crédito.
+              </p>
             </div>
           </>
         )}
 
         {submitError && (
-          <div className="mt-8 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <div
+            role="alert"
+            className="mt-8 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+          >
             {submitError}
           </div>
         )}
 
-        <div className="mt-10 flex flex-col-reverse gap-4 border-t border-slate-200 pt-8 sm:flex-row sm:justify-between">
+        <div className="mt-10 flex flex-col-reverse gap-4 border-t border-slate-200 pt-8 sm:flex-row sm:items-center sm:justify-between">
           {currentStep > 1 ? (
             <button
               type="button"
@@ -473,7 +502,7 @@ export function ApplicationWizard({ amount, months }: ApplicationWizardProps) {
             <div />
           )}
 
-          {currentStep < 5 ? (
+          {currentStep < TOTAL_STEPS ? (
             <button
               type="button"
               onClick={nextStep}
@@ -488,7 +517,7 @@ export function ApplicationWizard({ amount, months }: ApplicationWizardProps) {
               disabled={isSubmitting}
               className="rounded-xl bg-blue-600 px-8 py-4 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isSubmitting ? 'Criando solicitação...' : 'Prosseguir para análise'}
+              {isSubmitting ? 'Enviando solicitação...' : 'Prosseguir para análise'}
             </button>
           )}
         </div>
@@ -500,22 +529,14 @@ export function ApplicationWizard({ amount, months }: ApplicationWizardProps) {
 const inputClass =
   'w-full rounded-xl border border-slate-300 bg-white px-4 py-4 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100';
 
-function Fields({ children }: { children: React.ReactNode }) {
+function Fields({ children }: { children: ReactNode }) {
   return <div className="mt-10 grid gap-6">{children}</div>;
 }
 
-function Field({
-  label,
-  error,
-  children,
-}: {
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
   return (
     <div>
-      <p className="mb-2 text-sm font-medium text-slate-700">{label}</p>
+      <label className="mb-2 block text-sm font-medium text-slate-700">{label}</label>
 
       {children}
 
@@ -549,7 +570,9 @@ function ReviewItem({ label, value }: { label: string; value?: string }) {
     <div className="flex flex-col gap-1 rounded-2xl bg-slate-50 p-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
       <span className="text-sm text-slate-500">{label}</span>
 
-      <span className="text-left font-medium text-slate-900 sm:text-right">{value || '—'}</span>
+      <span className="break-words text-left font-medium text-slate-900 sm:text-right">
+        {value || '—'}
+      </span>
     </div>
   );
 }
@@ -601,6 +624,10 @@ function formatAddress({
     return '—';
   }
 
+  if (!mainAddress) {
+    return details;
+  }
+
   if (!details) {
     return mainAddress;
   }
@@ -613,11 +640,15 @@ function formatCity(city?: string, state?: string) {
     return '—';
   }
 
+  if (!city) {
+    return state || '—';
+  }
+
   if (!state) {
     return city;
   }
 
-  return `${city || ''} / ${state}`;
+  return `${city} / ${state}`;
 }
 
 function formatEmploymentType(value?: string) {

@@ -23,6 +23,10 @@ model CreditApplication {
   amount Int
   months Int
 
+  publicProtocol  String?   @unique @db.VarChar(24)
+  accessTokenHash String?   @db.Char(64)
+  submittedAt     DateTime?
+
   applicantData ApplicantData?
 
   createdAt DateTime @default(now())
