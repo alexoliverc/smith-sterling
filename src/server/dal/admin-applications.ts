@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { decryptPii } from '@/lib/security/pii';
 
 export async function listAdminApplications() {
-  return prisma.creditApplication.findMany({
+  const applications = await prisma.creditApplication.findMany({
     where: {
       publicProtocol: {
         not: null,
@@ -31,7 +31,59 @@ export async function listAdminApplications() {
           status: true,
         },
       },
+
+      offers: {
+        orderBy: {
+          version: 'desc',
+        },
+
+        take: 1,
+
+        select: {
+          version: true,
+          status: true,
+          expiresAt: true,
+          presentedAt: true,
+          acceptedAt: true,
+          declinedAt: true,
+          expiredAt: true,
+          cancelledAt: true,
+        },
+      },
     },
+  });
+
+  const now = new Date();
+
+  return applications.map(({ offers, ...application }) => {
+    const latestOffer = offers[0] ?? null;
+
+    const effectiveStatus =
+      latestOffer?.status === 'PRESENTED' &&
+      latestOffer.expiresAt <= now
+        ? 'EXPIRED'
+        : latestOffer?.status ?? null;
+
+    const acceptedOffer =
+      latestOffer?.status === 'ACCEPTED'
+        ? {
+            version: latestOffer.version,
+            acceptedAt: latestOffer.acceptedAt,
+          }
+        : null;
+
+    return {
+      ...application,
+
+      latestOffer: latestOffer
+        ? {
+            ...latestOffer,
+            effectiveStatus,
+          }
+        : null,
+
+      acceptedOffer,
+    };
   });
 }
 
@@ -240,4 +292,5 @@ function readString(object: Record<string, unknown>, key: string) {
 
   return typeof value === 'string' ? value : '';
 }
+
 
