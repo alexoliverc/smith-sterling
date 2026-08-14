@@ -4,13 +4,12 @@
   "description": "Plataforma digital da Smith Sterling.",
   "main": "index.js",
   "scripts": {
-    "status:review": "tsx scripts/mark-under-review.ts",
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "db:smoke": "tsx scripts/db-smoke.ts"
+    "db:smoke": "tsx scripts/db-smoke.ts",
+    "status:review": "node --conditions=react-server --import=tsx scripts/mark-under-review.ts"
   },
   "keywords": [],
   "author": "",

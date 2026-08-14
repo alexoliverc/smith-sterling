@@ -16,6 +16,11 @@ enum ApplicationStatus {
   CANCELLED
 }
 
+enum ApplicationStatusActor {
+  SYSTEM
+  OPERATOR
+}
+
 model CreditApplication {
   id     String            @id @default(cuid())
   status ApplicationStatus @default(DRAFT)
@@ -28,6 +33,7 @@ model CreditApplication {
   submittedAt     DateTime?
 
   applicantData ApplicantData?
+  statusHistory ApplicationStatusHistory[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -56,4 +62,22 @@ model ApplicantData {
   updatedAt DateTime @updatedAt
 
   @@index([cpfLookupHash])
+}
+
+model ApplicationStatusHistory {
+  id String @id @default(cuid())
+
+  applicationId String
+  application   CreditApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  fromStatus ApplicationStatus
+  toStatus   ApplicationStatus
+
+  actorType ApplicationStatusActor @default(SYSTEM)
+  actorId   String?                @db.VarChar(191)
+  reason    String?                @db.VarChar(500)
+
+  createdAt DateTime @default(now())
+
+  @@index([applicationId, createdAt])
 }

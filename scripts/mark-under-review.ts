@@ -1,6 +1,7 @@
 import 'dotenv/config';
 
 import { prisma } from '@/lib/prisma';
+import { transitionApplicationStatus } from '@/server/workflows/application-status';
 
 async function main() {
   const protocol = process.argv[2];
@@ -13,6 +14,7 @@ async function main() {
     where: {
       publicProtocol: protocol,
     },
+
     select: {
       id: true,
       publicProtocol: true,
@@ -24,24 +26,13 @@ async function main() {
     throw new Error(`Solicitação ${protocol} não encontrada.`);
   }
 
-  if (application.status !== 'SUBMITTED') {
-    throw new Error(`A solicitação está em ${application.status}. Esperado: SUBMITTED.`);
-  }
-
-  const updated = await prisma.creditApplication.update({
-    where: {
-      id: application.id,
-    },
-    data: {
-      status: 'UNDER_REVIEW',
-    },
-    select: {
-      publicProtocol: true,
-      status: true,
-    },
+  const updated = await transitionApplicationStatus(application.id, 'UNDER_REVIEW', {
+    actorType: 'SYSTEM',
+    reason: 'Análise iniciada por comando interno de desenvolvimento.',
   });
 
-  console.log('Status atualizado ✅');
+  console.log('Status atualizado com auditoria ✅');
+
   console.log(updated);
 }
 
