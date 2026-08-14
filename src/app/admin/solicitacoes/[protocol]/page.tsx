@@ -1,13 +1,20 @@
-import { StartAnalysisButton } from './start-analysis-button';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 
+import type {
+  AdminRole,
+  ApplicationStatus,
+  ApplicationStatusActor,
+} from '@/generated/prisma/client';
 import { getApplicationStatusPresentation } from '@/lib/application-status';
 import { formatCurrency } from '@/lib/credit';
 import { ADMIN_SESSION_COOKIE, findAdminSession } from '@/server/auth/admin-session';
 import { getAdminApplicationByProtocol } from '@/server/dal/admin-applications';
+
+import { DecisionPanel } from './decision-panel';
+import { StartAnalysisButton } from './start-analysis-button';
 
 type AdminApplicationPageProps = {
   params: Promise<{
@@ -270,19 +277,24 @@ export default async function AdminApplicationPage({ params }: AdminApplicationP
               <h2 className="mt-3 text-lg font-semibold text-[#0b1f33]">Ações do analista</h2>
 
               <p className="mt-3 text-sm leading-6 text-slate-500">
-                As ações de alteração de status serão habilitadas na próxima etapa.
+                As ações disponíveis dependem do status atual da proposta e do nível de autorização
+                do operador.
               </p>
 
               <div className="mt-5">
                 {application.status === 'SUBMITTED' ? (
                   <StartAnalysisButton protocol={protocolLabel} />
                 ) : application.status === 'UNDER_REVIEW' ? (
-                  <div className="rounded-xl bg-amber-50 px-4 py-3.5 text-center text-sm font-semibold text-amber-700">
-                    Análise em andamento
-                  </div>
+                  session.user.role === 'SUPER_ADMIN' ? (
+                    <DecisionPanel protocol={protocolLabel} />
+                  ) : (
+                    <div className="rounded-xl bg-slate-100 px-4 py-3.5 text-center text-sm font-medium leading-6 text-slate-600">
+                      A decisão final está restrita a um super administrador.
+                    </div>
+                  )
                 ) : (
-                  <div className="rounded-xl bg-slate-100 px-4 py-3.5 text-center text-sm font-semibold text-slate-500">
-                    Nenhuma ação disponível
+                  <div className="rounded-xl bg-slate-100 px-4 py-3.5 text-center text-sm font-semibold leading-6 text-slate-500">
+                    Esta proposta já possui decisão final ou foi encerrada.
                   </div>
                 )}
               </div>
@@ -326,11 +338,7 @@ function Detail({ label, value }: { label: string; value?: string }) {
   );
 }
 
-function StatusBadge({
-  status,
-}: {
-  status: 'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
-}) {
+function StatusBadge({ status }: { status: ApplicationStatus }) {
   const presentation = getStatusBadgePresentation(status);
 
   return (
@@ -342,9 +350,7 @@ function StatusBadge({
   );
 }
 
-function getStatusBadgePresentation(
-  status: 'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'CANCELLED',
-) {
+function getStatusBadgePresentation(status: ApplicationStatus) {
   switch (status) {
     case 'DRAFT':
       return {
@@ -441,10 +447,8 @@ function formatEmploymentType(value: string) {
   return labels[value] ?? value;
 }
 
-function formatStatus(
-  status: 'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'CANCELLED',
-) {
-  const labels = {
+function formatStatus(status: ApplicationStatus) {
+  const labels: Record<ApplicationStatus, string> = {
     DRAFT: 'Rascunho',
     SUBMITTED: 'Recebida',
     UNDER_REVIEW: 'Em análise',
@@ -456,10 +460,10 @@ function formatStatus(
   return labels[status];
 }
 
-function formatActor(actor: 'SYSTEM' | 'OPERATOR') {
+function formatActor(actor: ApplicationStatusActor) {
   return actor === 'SYSTEM' ? 'Sistema' : 'Operador';
 }
 
-function formatRole(role: 'SUPER_ADMIN' | 'ANALYST') {
+function formatRole(role: AdminRole) {
   return role === 'SUPER_ADMIN' ? 'Super administrador' : 'Analista';
 }
