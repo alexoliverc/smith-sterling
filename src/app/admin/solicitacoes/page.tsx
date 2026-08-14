@@ -7,8 +7,65 @@ import type { ApplicationStatus } from '@/generated/prisma/client';
 import { formatCurrency } from '@/lib/credit';
 import { ADMIN_SESSION_COOKIE, findAdminSession } from '@/server/auth/admin-session';
 import { listAdminApplications } from '@/server/dal/admin-applications';
+const QUEUE_FILTERS = [
+  {
+    value: 'all',
+    label: 'Todas',
+  },
+  {
+    value: 'submitted',
+    label: 'Recebidas',
+  },
+  {
+    value: 'under-review',
+    label: 'Em análise',
+  },
+  {
+    value: 'approved',
+    label: 'Aprovadas',
+  },
+  {
+    value: 'waiting-bank',
+    label: 'Aguardando dados',
+  },
+  {
+    value: 'bank-received',
+    label: 'Dados recebidos',
+  },
+  {
+    value: 'ready',
+    label: 'Prontas para liberação',
+  },
+  {
+    value: 'disbursed',
+    label: 'Crédito liberado',
+  },
+  {
+    value: 'rejected',
+    label: 'Não aprovadas',
+  },
+] as const;
 
-export default async function AdminApplicationsPage() {
+type QueueFilter =
+  (typeof QUEUE_FILTERS)[number]['value'];
+
+type AdminApplicationsPageProps = {
+  searchParams: Promise<{
+    filtro?: string;
+  }>;
+};
+
+function isQueueFilter(
+  value: string,
+): value is QueueFilter {
+  return QUEUE_FILTERS.some(
+    (filter) => filter.value === value,
+  );
+}
+
+export default async function AdminApplicationsPage({
+  searchParams,
+}: AdminApplicationsPageProps) {
   const cookieStore = await cookies();
 
   const token = cookieStore.get(ADMIN_SESSION_COOKIE)?.value;
@@ -24,6 +81,87 @@ export default async function AdminApplicationsPage() {
   }
 
   const applications = await listAdminApplications();
+
+  const query = await searchParams;
+
+  const requestedFilter =
+    query.filtro ?? 'all';
+
+  const activeFilter: QueueFilter =
+    isQueueFilter(requestedFilter)
+      ? requestedFilter
+      : 'all';
+
+  const filteredApplications =
+    applications.filter((application) => {
+      switch (activeFilter) {
+        case 'submitted':
+          return (
+            application.status ===
+            'SUBMITTED'
+          );
+
+        case 'under-review':
+          return (
+            application.status ===
+            'UNDER_REVIEW'
+          );
+
+        case 'approved':
+          return (
+            application.status ===
+            'APPROVED'
+          );
+
+        case 'waiting-bank':
+          return (
+            application.status ===
+              'APPROVED' &&
+            (
+              !application.formalization ||
+              application.formalization
+                .status === 'PENDING'
+            )
+          );
+
+        case 'bank-received':
+          return (
+            application.status ===
+              'APPROVED' &&
+            application.formalization
+              ?.status ===
+              'BANK_DETAILS_SUBMITTED'
+          );
+
+        case 'ready':
+          return (
+            application.status ===
+              'APPROVED' &&
+            application.formalization
+              ?.status ===
+              'READY_FOR_DISBURSEMENT'
+          );
+
+        case 'disbursed':
+          return (
+            application.status ===
+              'APPROVED' &&
+            application.formalization
+              ?.status ===
+              'DISBURSED'
+          );
+
+        case 'rejected':
+          return (
+            application.status ===
+            'REJECTED'
+          );
+
+        case 'all':
+        default:
+          return true;
+      }
+    });
 
   const total = applications.length;
 
@@ -103,16 +241,59 @@ export default async function AdminApplicationsPage() {
             </div>
 
             <div className="inline-flex w-fit rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-600">
-              {total} {total === 1 ? 'registro' : 'registros'}
+              {filteredApplications.length}{' '}
+              {filteredApplications.length === 1
+                ? 'registro'
+                : 'registros'}
+
+              {activeFilter !== 'all' && (
+                <span className="ml-1 text-slate-400">
+                  de {total}
+                </span>
+              )}
             </div>
           </div>
 
-          {applications.length === 0 ? (
+          <div
+            aria-label="Filtros da fila"
+            className="border-b border-slate-200 bg-white px-6 py-4"
+          >
+            <div className="flex flex-wrap gap-2">
+              {QUEUE_FILTERS.map(
+                (filter) => {
+                  const active =
+                    activeFilter ===
+                    filter.value;
+
+                  const href =
+                    filter.value === 'all'
+                      ? '/admin/solicitacoes'
+                      : `/admin/solicitacoes?filtro=${filter.value}`;
+
+                  return (
+                    <Link
+                      key={filter.value}
+                      href={href}
+                      className={
+                        active
+                          ? 'rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold !text-white shadow-sm'
+                          : 'rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700'
+                      }
+                    >
+                      {filter.label}
+                    </Link>
+                  );
+                },
+              )}
+            </div>
+          </div>
+
+          {filteredApplications.length === 0 ? (
             <div className="px-6 py-16 text-center">
-              <p className="font-medium text-slate-700">Nenhuma solicitação encontrada.</p>
+              <p className="font-medium text-slate-700">{total === 0 ? 'Nenhuma solicitação encontrada.' : 'Nenhuma solicitação encontrada neste filtro.'}</p>
 
               <p className="mt-2 text-sm text-slate-500">
-                Novas solicitações aparecerão aqui automaticamente.
+                {total === 0 ? 'Novas solicitações aparecerão aqui automaticamente.' : 'Selecione outro filtro para visualizar as demais operações.'}
               </p>
             </div>
           ) : (
@@ -126,7 +307,7 @@ export default async function AdminApplicationsPage() {
               </div>
 
               <div className="divide-y divide-slate-200">
-                {applications.map((application) => (
+                {filteredApplications.map((application) => (
                   <ApplicationRow
                     key={application.publicProtocol}
                     protocol={application.publicProtocol ?? 'Sem protocolo'}
@@ -373,4 +554,5 @@ function formatRole(role: 'SUPER_ADMIN' | 'ANALYST') {
       return 'Analista';
   }
 }
+
 
