@@ -309,18 +309,37 @@ export default async function AdminApplicationPage({ params }: AdminApplicationP
                     </div>
 
                     {session.user.role === 'SUPER_ADMIN' ? (
-                      <Link
-                        href={`/admin/solicitacoes/${encodeURIComponent(
-                          protocolLabel,
-                        )}/formalizacao`}
-                        className="group flex w-full items-center justify-between rounded-xl bg-blue-600 px-5 py-4 text-sm font-semibold !text-white shadow-sm transition duration-200 hover:bg-blue-700 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-blue-100"
-                      >
-                        <span>Abrir formalização</span>
+                      <div className="space-y-3">
+                        <Link
+                          href={`/admin/solicitacoes/${encodeURIComponent(
+                            protocolLabel,
+                          )}/oferta`}
+                          className="group flex w-full items-center justify-between rounded-xl bg-blue-600 px-5 py-4 text-sm font-semibold !text-white shadow-sm transition duration-200 hover:bg-blue-700 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-blue-100"
+                        >
+                          <span>Criar / gerenciar proposta</span>
 
-                        <span aria-hidden="true" className="text-lg">
-                          →
-                        </span>
-                      </Link>
+                          <span aria-hidden="true" className="text-lg">
+                            →
+                          </span>
+                        </Link>
+
+                        <Link
+                          href={`/admin/solicitacoes/${encodeURIComponent(
+                            protocolLabel,
+                          )}/formalizacao`}
+                          className="group flex w-full items-center justify-between rounded-xl border border-slate-300 bg-white px-5 py-4 text-sm font-semibold text-slate-700 transition duration-200 hover:border-slate-400 hover:bg-slate-50"
+                        >
+                          <span>Abrir formalização atual</span>
+
+                          <span aria-hidden="true" className="text-lg">
+                            →
+                          </span>
+                        </Link>
+
+                        <p className="text-xs leading-5 text-amber-700">
+                          A formalização direta permanece disponível temporariamente durante a migração para o fluxo de aceite da proposta.
+                        </p>
+                      </div>
                     ) : (
                       <div className="rounded-xl bg-slate-100 px-4 py-3.5 text-center text-sm font-medium leading-6 text-slate-600">
                         A formalização financeira está restrita a um super administrador.
