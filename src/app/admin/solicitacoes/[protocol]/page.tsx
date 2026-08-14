@@ -1,4 +1,3 @@
-import { AdminLogoutButton } from '@/components/admin/logout-button';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
@@ -9,6 +8,7 @@ import type {
   ApplicationStatus,
   ApplicationStatusActor,
 } from '@/generated/prisma/client';
+import { AdminLogoutButton } from '@/components/admin/logout-button';
 import { getApplicationStatusPresentation } from '@/lib/application-status';
 import { formatCurrency } from '@/lib/credit';
 import { ADMIN_SESSION_COOKIE, findAdminSession } from '@/server/auth/admin-session';
@@ -297,9 +297,47 @@ export default async function AdminApplicationPage({ params }: AdminApplicationP
                       A decisão final está restrita a um super administrador.
                     </div>
                   )
+                ) : application.status === 'APPROVED' ? (
+                  <div className="space-y-4">
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4">
+                      <p className="text-sm font-semibold text-emerald-900">✓ Crédito aprovado</p>
+
+                      <p className="mt-2 text-sm leading-6 text-emerald-700">
+                        A análise foi concluída. Acompanhe agora a formalização e a etapa de
+                        liberação da operação.
+                      </p>
+                    </div>
+
+                    {session.user.role === 'SUPER_ADMIN' ? (
+                      <Link
+                        href={`/admin/solicitacoes/${encodeURIComponent(
+                          protocolLabel,
+                        )}/formalizacao`}
+                        className="group flex w-full items-center justify-between rounded-xl bg-blue-600 px-5 py-4 text-sm font-semibold !text-white shadow-sm transition duration-200 hover:bg-blue-700 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-blue-100"
+                      >
+                        <span>Abrir formalização</span>
+
+                        <span aria-hidden="true" className="text-lg">
+                          →
+                        </span>
+                      </Link>
+                    ) : (
+                      <div className="rounded-xl bg-slate-100 px-4 py-3.5 text-center text-sm font-medium leading-6 text-slate-600">
+                        A formalização financeira está restrita a um super administrador.
+                      </div>
+                    )}
+                  </div>
+                ) : application.status === 'REJECTED' ? (
+                  <div className="rounded-xl bg-red-50 px-4 py-3.5 text-center text-sm font-semibold leading-6 text-red-700">
+                    Solicitação não aprovada. Nenhuma formalização foi iniciada.
+                  </div>
+                ) : application.status === 'CANCELLED' ? (
+                  <div className="rounded-xl bg-slate-100 px-4 py-3.5 text-center text-sm font-semibold leading-6 text-slate-500">
+                    Esta solicitação foi encerrada.
+                  </div>
                 ) : (
                   <div className="rounded-xl bg-slate-100 px-4 py-3.5 text-center text-sm font-semibold leading-6 text-slate-500">
-                    Esta proposta já possui decisão final ou foi encerrada.
+                    Nenhuma ação disponível.
                   </div>
                 )}
               </div>
@@ -472,3 +510,4 @@ function formatActor(actor: ApplicationStatusActor) {
 function formatRole(role: AdminRole) {
   return role === 'SUPER_ADMIN' ? 'Super administrador' : 'Analista';
 }
+
