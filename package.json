@@ -11,7 +11,9 @@
     "db:smoke": "tsx scripts/db-smoke.ts",
     "status:review": "node --conditions=react-server --import=tsx scripts/mark-under-review.ts",
     "admin:create": "node --conditions=react-server --import=tsx scripts/create-admin.ts",
-    "admin:reset-password": "node --conditions=react-server --import=tsx scripts/reset-admin-password.ts"
+    "admin:reset-password": "node --conditions=react-server --import=tsx scripts/reset-admin-password.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [],
   "author": "",
@@ -27,7 +29,8 @@
     "prisma": "^7.9.1",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.12",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.10"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.8.0",
