@@ -6,6 +6,12 @@ import { createLookupHash } from '@/lib/security/pii';
 const RECOVERY_WINDOW_MS =
   15 * 60 * 1000;
 
+const RATE_LIMIT_RETENTION_MS =
+  24 * 60 * 60 * 1000;
+
+const CLEANUP_INTERVAL_MS =
+  60 * 60 * 1000;
+
 /*
  * Origem é uma proteção auxiliar.
  *
@@ -15,6 +21,8 @@ const RECOVERY_WINDOW_MS =
  */
 const ORIGIN_MAX_ATTEMPTS = 60;
 const TARGET_MAX_ATTEMPTS = 8;
+
+let lastCleanupAt = 0;
 
 type ConsumeApplicationRecoveryRateLimitInput = {
   origin: string;
@@ -121,6 +129,46 @@ async function consumeBucket(
   }
 }
 
+async function cleanupExpiredBuckets(
+  now: Date,
+) {
+  const nowMs =
+    now.getTime();
+
+  if (
+    nowMs - lastCleanupAt <
+    CLEANUP_INTERVAL_MS
+  ) {
+    return;
+  }
+
+  lastCleanupAt = nowMs;
+
+  const retentionLimit =
+    new Date(
+      nowMs -
+        RATE_LIMIT_RETENTION_MS,
+    );
+
+  try {
+    await prisma
+      .applicationRecoveryRateLimitBucket
+      .deleteMany({
+        where: {
+          bucketStart: {
+            lt: retentionLimit,
+          },
+        },
+      });
+  } catch {
+    /*
+     * A limpeza é manutenção operacional.
+     * Uma falha aqui não deve impedir
+     * a validação de acesso do cliente.
+     */
+  }
+}
+
 export async function consumeApplicationRecoveryRateLimit(
   input: ConsumeApplicationRecoveryRateLimitInput,
 ) {
@@ -128,6 +176,10 @@ export async function consumeApplicationRecoveryRateLimit(
 
   const bucketStart =
     getBucketStart(now);
+
+  await cleanupExpiredBuckets(
+    now,
+  );
 
   /*
    * Domain separation:
