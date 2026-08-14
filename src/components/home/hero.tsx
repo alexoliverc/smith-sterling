@@ -1,14 +1,27 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { calculateCreditSimulation, formatCurrency } from '@/lib/credit';
 
 export function Hero() {
+  const router = useRouter();
+
   const [amount, setAmount] = useState(5000);
   const [months, setMonths] = useState(12);
 
+
   const simulation = useMemo(() => calculateCreditSimulation(amount, months), [amount, months]);
+  function handleContinue() {
+    const params = new URLSearchParams({
+      valor: String(amount),
+      prazo: String(months),
+    });
+
+    router.push(`/solicitacao?${params.toString()}`);
+  }
+
 
   return (
     <section className="relative overflow-hidden bg-[#f7f8fa]">
@@ -130,6 +143,7 @@ export function Hero() {
 
             <button
               type="button"
+              onClick={handleContinue}
               className="mt-7 w-full rounded-xl bg-blue-600 px-6 py-4 font-semibold text-white transition hover:bg-blue-700"
             >
               Continuar simulação
