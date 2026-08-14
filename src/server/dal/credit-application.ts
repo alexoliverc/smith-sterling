@@ -11,17 +11,21 @@ import {
   decryptPii,
   encryptPii,
 } from '@/lib/security/pii';
-import { applicationSchema, type ApplicationFormData } from '@/lib/schemas/application';
+import {
+  creditApplicationRequestSchema,
+} from '@/lib/schemas/application';
 import { cleanCpf } from '@/lib/validation/cpf';
 
-type CreateCreditApplicationInput = {
-  amount: number;
-  months: number;
-  applicant: ApplicationFormData;
-};
+export async function createCreditApplicationRecord(
+  input: unknown,
+) {
+  const request =
+    creditApplicationRequestSchema.parse(
+      input,
+    );
 
-export async function createCreditApplicationRecord(input: CreateCreditApplicationInput) {
-  const applicant = applicationSchema.parse(input.applicant);
+  const applicant =
+    request.applicant;
 
   const cpf = cleanCpf(applicant.cpf);
 
@@ -38,8 +42,8 @@ export async function createCreditApplicationRecord(input: CreateCreditApplicati
      */
     const application = await tx.creditApplication.create({
       data: {
-        amount: input.amount,
-        months: input.months,
+        amount: request.amount,
+        months: request.months,
 
         status: 'DRAFT',
 
