@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 
-import { createCreditApplication } from '@/app/solicitacao/actions';
+import { createCreditApplication } from '@/app/solicitacoes/actions';
 import { formatCep, formatIncome, formatPhone } from '@/lib/formatters';
 import { applicationSchema, type ApplicationFormData } from '@/lib/schemas/application';
 import { formatCpf } from '@/lib/validation/cpf';
