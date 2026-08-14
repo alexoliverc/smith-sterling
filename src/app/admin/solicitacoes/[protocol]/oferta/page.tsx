@@ -82,6 +82,13 @@ export default async function AdminCreditOfferPage({
     application.publicProtocol ??
     protocol;
 
+  const acceptedOffer =
+    application.offers.find(
+      (offer) =>
+        offer.status ===
+        'ACCEPTED',
+    ) ?? null;
+
   return (
     <main className="min-h-screen bg-slate-50">
       <header className="border-b border-white/10 bg-[#071522]">
@@ -159,15 +166,27 @@ export default async function AdminCreditOfferPage({
             </div>
 
             <div className="mt-8">
-              <CreditOfferForm
-                protocol={protocolLabel}
-                requestedAmount={
-                  application.amount
-                }
-                requestedMonths={
-                  application.months
-                }
-              />
+              {acceptedOffer ? (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6">
+                  <p className="text-sm font-semibold text-emerald-900">
+                    Proposta aceita pelo cliente
+                  </p>
+
+                  <p className="mt-2 text-sm leading-6 text-emerald-800">
+                    A versão {acceptedOffer.version} foi aceita. As condições da operação estão fechadas e uma nova proposta não pode ser publicada.
+                  </p>
+                </div>
+              ) : (
+                <CreditOfferForm
+                  protocol={protocolLabel}
+                  requestedAmount={
+                    application.amount
+                  }
+                  requestedMonths={
+                    application.months
+                  }
+                />
+              )}
             </div>
           </section>
 
@@ -335,15 +354,53 @@ export default async function AdminCreditOfferPage({
               )}
             </section>
 
-            <section className="rounded-3xl border border-amber-200 bg-amber-50 p-6">
-              <p className="text-sm font-semibold text-amber-900">
-                Migração do fluxo em andamento
-              </p>
+            {acceptedOffer ? (
+              <section className="rounded-3xl border border-emerald-200 bg-emerald-50 p-6">
+                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                  Próxima etapa
+                </p>
 
-              <p className="mt-2 text-sm leading-6 text-amber-800">
-                A formalização antiga permanece disponível temporariamente. Ela será vinculada ao aceite da proposta quando concluirmos a próxima etapa do fluxo.
-              </p>
-            </section>
+                <h2 className="mt-2 text-lg font-semibold text-emerald-950">
+                  Formalização liberada
+                </h2>
+
+                <p className="mt-3 text-sm leading-6 text-emerald-800">
+                  O cliente aceitou a versão {acceptedOffer.version} da proposta. A operação pode seguir para a formalização.
+                </p>
+
+                <Link
+                  href={`/admin/solicitacoes/${encodeURIComponent(
+                    protocolLabel,
+                  )}/formalizacao`}
+                  className="group mt-5 flex w-full items-center justify-between rounded-xl bg-blue-600 px-5 py-4 text-sm font-semibold !text-white shadow-sm transition hover:bg-blue-700"
+                >
+                  <span className="!text-white">
+                    Abrir formalização
+                  </span>
+
+                  <span
+                    aria-hidden="true"
+                    className="text-lg !text-white"
+                  >
+                    →
+                  </span>
+                </Link>
+              </section>
+            ) : (
+              <section className="rounded-3xl border border-blue-100 bg-blue-50 p-6">
+                <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
+                  Formalização
+                </p>
+
+                <h2 className="mt-2 text-lg font-semibold text-[#071522]">
+                  Aguardando aceite
+                </h2>
+
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  A formalização ficará disponível somente depois que o cliente aceitar uma proposta válida.
+                </p>
+              </section>
+            )}
           </aside>
         </div>
       </section>

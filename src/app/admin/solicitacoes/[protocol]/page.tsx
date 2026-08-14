@@ -303,8 +303,7 @@ export default async function AdminApplicationPage({ params }: AdminApplicationP
                       <p className="text-sm font-semibold text-emerald-900">✓ Crédito aprovado</p>
 
                       <p className="mt-2 text-sm leading-6 text-emerald-700">
-                        A análise foi concluída. Acompanhe agora a formalização e a etapa de
-                        liberação da operação.
+                        A análise foi concluída. Crie e gerencie a proposta que será apresentada ao cliente antes da formalização.
                       </p>
                     </div>
 
@@ -323,26 +322,11 @@ export default async function AdminApplicationPage({ params }: AdminApplicationP
                           </span>
                         </Link>
 
-                        <Link
-                          href={`/admin/solicitacoes/${encodeURIComponent(
-                            protocolLabel,
-                          )}/formalizacao`}
-                          className="group flex w-full items-center justify-between rounded-xl border border-slate-300 bg-white px-5 py-4 text-sm font-semibold text-slate-700 transition duration-200 hover:border-slate-400 hover:bg-slate-50"
-                        >
-                          <span>Abrir formalização atual</span>
 
-                          <span aria-hidden="true" className="text-lg">
-                            →
-                          </span>
-                        </Link>
-
-                        <p className="text-xs leading-5 text-amber-700">
-                          A formalização direta permanece disponível temporariamente durante a migração para o fluxo de aceite da proposta.
-                        </p>
                       </div>
                     ) : (
                       <div className="rounded-xl bg-slate-100 px-4 py-3.5 text-center text-sm font-medium leading-6 text-slate-600">
-                        A formalização financeira está restrita a um super administrador.
+                        A gestão da proposta de crédito está restrita a um super administrador.
                       </div>
                     )}
                   </div>
@@ -529,4 +513,5 @@ function formatActor(actor: ApplicationStatusActor) {
 function formatRole(role: AdminRole) {
   return role === 'SUPER_ADMIN' ? 'Super administrador' : 'Analista';
 }
+
 
