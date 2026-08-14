@@ -173,6 +173,108 @@ export async function getAdminApplicationByProtocol(protocol: string) {
         : null,
   }));
 
+  /*
+   * Resumo operacional usado pelo cockpit.
+   *
+   * Não retornamos dados bancários nem
+   * qualquer PII adicional aqui.
+   */
+  const [
+    latestOfferRecord,
+    acceptedOffer,
+    formalization,
+  ] = await Promise.all([
+    prisma.creditOffer.findFirst({
+      where: {
+        applicationId:
+          application.id,
+      },
+
+      orderBy: {
+        version:
+          'desc',
+      },
+
+      select: {
+        version: true,
+        status: true,
+
+        expiresAt: true,
+
+        presentedAt: true,
+        acceptedAt: true,
+        declinedAt: true,
+        expiredAt: true,
+        cancelledAt: true,
+
+        createdAt: true,
+        updatedAt: true,
+      },
+    }),
+
+    prisma.creditOffer.findFirst({
+      where: {
+        applicationId:
+          application.id,
+
+        status:
+          'ACCEPTED',
+      },
+
+      orderBy: {
+        version:
+          'desc',
+      },
+
+      select: {
+        version: true,
+        acceptedAt: true,
+      },
+    }),
+
+    prisma.creditFormalization.findUnique({
+      where: {
+        applicationId:
+          application.id,
+      },
+
+      select: {
+        status: true,
+
+        bankDataSubmittedAt:
+          true,
+
+        readyAt: true,
+        disbursedAt: true,
+        cancelledAt: true,
+
+        createdAt: true,
+        updatedAt: true,
+      },
+    }),
+  ]);
+
+  const latestOffer =
+    latestOfferRecord
+      ? {
+          ...latestOfferRecord,
+
+          /*
+           * Evita mostrar "aguardando aceite"
+           * quando a validade já terminou,
+           * mesmo antes da persistência do
+           * evento EXPIRED.
+           */
+          effectiveStatus:
+            latestOfferRecord.status ===
+              'PRESENTED' &&
+            latestOfferRecord.expiresAt <=
+              new Date()
+              ? ('EXPIRED' as const)
+              : latestOfferRecord.status,
+        }
+      : null;
+
   if (!application.applicantData) {
     return {
       id: application.id,
@@ -187,6 +289,12 @@ export async function getAdminApplicationByProtocol(protocol: string) {
       applicant: null,
 
       statusHistory,
+
+      latestOffer,
+
+      acceptedOffer,
+
+      formalization,
     };
   }
 
@@ -256,6 +364,12 @@ export async function getAdminApplicationByProtocol(protocol: string) {
     },
 
     statusHistory,
+
+    latestOffer,
+
+    acceptedOffer,
+
+    formalization,
   };
 }
 
