@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "eslint .",
     "db:smoke": "tsx scripts/db-smoke.ts",
-    "status:review": "node --conditions=react-server --import=tsx scripts/mark-under-review.ts"
+    "status:review": "node --conditions=react-server --import=tsx scripts/mark-under-review.ts",
+    "admin:create": "node --conditions=react-server --import=tsx scripts/create-admin.ts"
   },
   "keywords": [],
   "author": "",

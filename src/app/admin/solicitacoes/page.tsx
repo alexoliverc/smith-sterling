@@ -1,0 +1,269 @@
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+
+import { formatCurrency } from '@/lib/credit';
+import { ADMIN_SESSION_COOKIE, findAdminSession } from '@/server/auth/admin-session';
+import { listAdminApplications } from '@/server/dal/admin-applications';
+
+export default async function AdminApplicationsPage() {
+  const cookieStore = await cookies();
+
+  const token = cookieStore.get(ADMIN_SESSION_COOKIE)?.value;
+
+  if (!token) {
+    redirect('/admin/login');
+  }
+
+  const session = await findAdminSession(token);
+
+  if (!session) {
+    redirect('/admin/login');
+  }
+
+  const applications = await listAdminApplications();
+
+  const total = applications.length;
+
+  const submitted = applications.filter((application) => application.status === 'SUBMITTED').length;
+
+  const underReview = applications.filter(
+    (application) => application.status === 'UNDER_REVIEW',
+  ).length;
+
+  const approved = applications.filter((application) => application.status === 'APPROVED').length;
+
+  const rejected = applications.filter((application) => application.status === 'REJECTED').length;
+
+  return (
+    <main className="min-h-screen bg-slate-50">
+      <header className="border-b border-white/10 bg-[#071522]">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-5">
+          <div className="flex items-center gap-4">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-sm font-bold text-[#0b1f33]">
+              SS
+            </div>
+
+            <div>
+              <p className="font-semibold text-white">Smith Sterling</p>
+
+              <p className="text-xs text-slate-400">Backoffice de crédito</p>
+            </div>
+          </div>
+
+          <div className="text-right">
+            <p className="text-sm font-medium text-white">{session.user.name}</p>
+
+            <p className="text-xs text-slate-400">{formatRole(session.user.role)}</p>
+          </div>
+        </div>
+      </header>
+
+      <section className="mx-auto max-w-7xl px-6 py-10 md:py-12">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-blue-600">
+            Operações
+          </p>
+
+          <h1 className="mt-3 text-4xl font-semibold tracking-[-0.04em] text-[#0b1f33]">
+            Solicitações de crédito
+          </h1>
+
+          <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-600">
+            Acompanhe as propostas recebidas e o estágio atual de cada operação.
+          </p>
+        </div>
+
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <MetricCard label="Total" value={total} />
+
+          <MetricCard label="Recebidas" value={submitted} />
+
+          <MetricCard label="Em análise" value={underReview} />
+
+          <MetricCard label="Aprovadas" value={approved} />
+
+          <MetricCard label="Não aprovadas" value={rejected} />
+        </div>
+
+        <div className="mt-10 overflow-hidden rounded-3xl border border-slate-200 bg-white">
+          <div className="flex flex-col gap-3 border-b border-slate-200 px-6 py-6 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-[#0b1f33]">Fila de solicitações</h2>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Exibindo até as 100 solicitações mais recentes.
+              </p>
+            </div>
+
+            <div className="inline-flex w-fit rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-600">
+              {total} {total === 1 ? 'registro' : 'registros'}
+            </div>
+          </div>
+
+          {applications.length === 0 ? (
+            <div className="px-6 py-16 text-center">
+              <p className="font-medium text-slate-700">Nenhuma solicitação encontrada.</p>
+
+              <p className="mt-2 text-sm text-slate-500">
+                Novas solicitações aparecerão aqui automaticamente.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="hidden grid-cols-[1.5fr_1fr_0.8fr_1fr_1.1fr] gap-4 border-b border-slate-200 bg-slate-50 px-6 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 lg:grid">
+                <span>Protocolo</span>
+                <span>Valor</span>
+                <span>Prazo</span>
+                <span>Status</span>
+                <span>Recebida em</span>
+              </div>
+
+              <div className="divide-y divide-slate-200">
+                {applications.map((application) => (
+                  <ApplicationRow
+                    key={application.publicProtocol}
+                    protocol={application.publicProtocol ?? 'Sem protocolo'}
+                    amount={application.amount}
+                    months={application.months}
+                    status={application.status}
+                    submittedAt={application.submittedAt ?? application.createdAt}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function MetricCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5">
+      <p className="text-sm text-slate-500">{label}</p>
+
+      <p className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[#0b1f33]">{value}</p>
+    </div>
+  );
+}
+
+function ApplicationRow({
+  protocol,
+  amount,
+  months,
+  status,
+  submittedAt,
+}: {
+  protocol: string;
+  amount: number;
+  months: number;
+  status: 'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+  submittedAt: Date;
+}) {
+  const statusPresentation = getStatusPresentation(status);
+
+  return (
+    <div className="grid gap-5 px-6 py-5 transition hover:bg-slate-50 lg:grid-cols-[1.5fr_1fr_0.8fr_1fr_1.1fr] lg:items-center lg:gap-4">
+      <div>
+        <p className="text-xs font-medium uppercase tracking-wide text-slate-400 lg:hidden">
+          Protocolo
+        </p>
+
+        <p className="mt-1 font-mono text-sm font-semibold text-[#0b1f33] lg:mt-0">{protocol}</p>
+      </div>
+
+      <div>
+        <p className="text-xs font-medium uppercase tracking-wide text-slate-400 lg:hidden">
+          Valor
+        </p>
+
+        <p className="mt-1 font-medium text-slate-800 lg:mt-0">{formatCurrency(amount)}</p>
+      </div>
+
+      <div>
+        <p className="text-xs font-medium uppercase tracking-wide text-slate-400 lg:hidden">
+          Prazo
+        </p>
+
+        <p className="mt-1 text-sm text-slate-700 lg:mt-0">{months} meses</p>
+      </div>
+
+      <div>
+        <span
+          className={`inline-flex rounded-full px-3 py-1.5 text-xs font-semibold ${statusPresentation.className}`}
+        >
+          {statusPresentation.label}
+        </span>
+      </div>
+
+      <div>
+        <p className="text-xs font-medium uppercase tracking-wide text-slate-400 lg:hidden">
+          Recebida em
+        </p>
+
+        <p className="mt-1 text-sm text-slate-600 lg:mt-0">{formatDateTime(submittedAt)}</p>
+      </div>
+    </div>
+  );
+}
+
+function getStatusPresentation(
+  status: 'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'CANCELLED',
+) {
+  switch (status) {
+    case 'DRAFT':
+      return {
+        label: 'Rascunho',
+        className: 'bg-slate-100 text-slate-700',
+      };
+
+    case 'SUBMITTED':
+      return {
+        label: 'Recebida',
+        className: 'bg-blue-50 text-blue-700',
+      };
+
+    case 'UNDER_REVIEW':
+      return {
+        label: 'Em análise',
+        className: 'bg-amber-50 text-amber-700',
+      };
+
+    case 'APPROVED':
+      return {
+        label: 'Aprovada',
+        className: 'bg-emerald-50 text-emerald-700',
+      };
+
+    case 'REJECTED':
+      return {
+        label: 'Não aprovada',
+        className: 'bg-red-50 text-red-700',
+      };
+
+    case 'CANCELLED':
+      return {
+        label: 'Cancelada',
+        className: 'bg-slate-100 text-slate-500',
+      };
+  }
+}
+
+function formatDateTime(date: Date) {
+  return new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: 'America/Bahia',
+  }).format(date);
+}
+
+function formatRole(role: 'SUPER_ADMIN' | 'ANALYST') {
+  switch (role) {
+    case 'SUPER_ADMIN':
+      return 'Super administrador';
+
+    case 'ANALYST':
+      return 'Analista';
+  }
+}
