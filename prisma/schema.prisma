@@ -26,6 +26,14 @@ enum AdminRole {
   ANALYST
 }
 
+enum FormalizationStatus {
+  PENDING
+  BANK_DETAILS_SUBMITTED
+  READY_FOR_DISBURSEMENT
+  DISBURSED
+  CANCELLED
+}
+
 model CreditApplication {
   id     String            @id @default(cuid())
   status ApplicationStatus @default(DRAFT)
@@ -88,6 +96,47 @@ model ApplicationStatusHistory {
   @@index([applicationId, createdAt])
 }
 
+model CreditFormalization {
+  id String @id @default(cuid())
+
+  applicationId String            @unique
+  application   CreditApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  status FormalizationStatus @default(PENDING)
+
+  bankDataEncrypted String? @db.Text
+
+  bankDataSubmittedAt DateTime?
+  readyAt             DateTime?
+  disbursedAt         DateTime?
+  cancelledAt         DateTime?
+
+  statusHistory FormalizationStatusHistory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+model FormalizationStatusHistory {
+  id String @id @default(cuid())
+
+  formalizationId String
+  formalization   CreditFormalization @relation(fields: [formalizationId], references: [id], onDelete: Cascade)
+
+  fromStatus FormalizationStatus
+  toStatus   FormalizationStatus
+
+  actorType ApplicationStatusActor @default(SYSTEM)
+  actorId   String?                @db.VarChar(191)
+  reason    String?                @db.VarChar(500)
+
+  createdAt DateTime @default(now())
+
+  @@index([formalizationId, createdAt])
+}
+
 model AdminUser {
   id String @id @default(cuid())
 
@@ -118,33 +167,4 @@ model AdminSession {
 
   @@index([userId])
   @@index([expiresAt])
-}
-
-enum FormalizationStatus {
-  PENDING
-  BANK_DETAILS_SUBMITTED
-  READY_FOR_DISBURSEMENT
-  DISBURSED
-  CANCELLED
-}
-
-model CreditFormalization {
-  id String @id @default(cuid())
-
-  applicationId String            @unique
-  application   CreditApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-
-  status FormalizationStatus @default(PENDING)
-
-  bankDataEncrypted String? @db.Text
-
-  bankDataSubmittedAt DateTime?
-  readyAt             DateTime?
-  disbursedAt         DateTime?
-  cancelledAt         DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([status])
 }

@@ -3,15 +3,22 @@ import 'server-only';
 import { prisma } from '@/lib/prisma';
 import { encryptPii } from '@/lib/security/pii';
 import { findApplicationForSession } from '@/server/dal/credit-application';
+import {
+  FormalizationLockedError,
+  submitFormalizationBankData,
+} from '@/server/workflows/formalization-status';
 
 export type BankAccountInput = {
   bankName: string;
+
   branch: string;
+
   account: string;
 
   accountType: 'CHECKING' | 'SAVINGS' | 'PAYMENT';
 
   holderName: string;
+
   pixKey?: string;
 };
 
@@ -69,10 +76,13 @@ export async function getFormalizationForSession(protocol: string, accessToken: 
       status: true,
 
       bankDataSubmittedAt: true,
+
       readyAt: true,
+
       disbursedAt: true,
 
       createdAt: true,
+
       updatedAt: true,
     },
   });
@@ -104,6 +114,7 @@ export async function saveBankDataForSession(
   if (!publicApplication) {
     return {
       success: false as const,
+
       reason: 'UNAUTHORIZED' as const,
     };
   }
@@ -111,6 +122,7 @@ export async function saveBankDataForSession(
   if (publicApplication.status !== 'APPROVED') {
     return {
       success: false as const,
+
       reason: 'NOT_APPROVED' as const,
     };
   }
@@ -122,45 +134,38 @@ export async function saveBankDataForSession(
 
     select: {
       id: true,
+
+      formalization: {
+        select: {
+          id: true,
+          status: true,
+        },
+      },
     },
   });
 
   if (!application) {
     return {
       success: false as const,
+
       reason: 'NOT_FOUND' as const,
     };
   }
 
-  const formalization = await prisma.creditFormalization.upsert({
-    where: {
-      applicationId: application.id,
-    },
+  const formalization =
+    application.formalization ??
+    (await prisma.creditFormalization.create({
+      data: {
+        applicationId: application.id,
 
-    update: {},
+        status: 'PENDING',
+      },
 
-    create: {
-      applicationId: application.id,
-
-      status: 'PENDING',
-    },
-
-    select: {
-      id: true,
-      status: true,
-    },
-  });
-
-  if (
-    formalization.status === 'READY_FOR_DISBURSEMENT' ||
-    formalization.status === 'DISBURSED' ||
-    formalization.status === 'CANCELLED'
-  ) {
-    return {
-      success: false as const,
-      reason: 'LOCKED' as const,
-    };
-  }
+      select: {
+        id: true,
+        status: true,
+      },
+    }));
 
   const protectedPayload = encryptPii(
     JSON.stringify({
@@ -182,19 +187,19 @@ export async function saveBankDataForSession(
     `${application.id}:bankData`,
   );
 
-  await prisma.creditFormalization.update({
-    where: {
-      id: formalization.id,
-    },
+  try {
+    await submitFormalizationBankData(formalization.id, protectedPayload);
+  } catch (error) {
+    if (error instanceof FormalizationLockedError) {
+      return {
+        success: false as const,
 
-    data: {
-      bankDataEncrypted: protectedPayload,
+        reason: 'LOCKED' as const,
+      };
+    }
 
-      status: 'BANK_DETAILS_SUBMITTED',
-
-      bankDataSubmittedAt: new Date(),
-    },
-  });
+    throw error;
+  }
 
   return {
     success: true as const,
