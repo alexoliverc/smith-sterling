@@ -372,7 +372,7 @@ export async function submitFormalizationBankData(
               'BANK_DETAILS_SUBMITTED',
 
             actorType:
-              'SYSTEM',
+              'APPLICANT',
 
             actorId:
               null,

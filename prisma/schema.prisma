@@ -19,6 +19,7 @@ enum ApplicationStatus {
 enum ApplicationStatusActor {
   SYSTEM
   OPERATOR
+  APPLICANT
 }
 
 enum AdminRole {
