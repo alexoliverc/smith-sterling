@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
+import type { ReactNode } from 'react';
 
 import type { FormalizationStatus } from '@/generated/prisma/client';
 import { formatCurrency } from '@/lib/credit';
@@ -8,6 +9,7 @@ import { ADMIN_SESSION_COOKIE, findAdminSession } from '@/server/auth/admin-sess
 import { getAdminFormalizationByProtocol } from '@/server/dal/admin-formalization';
 
 import { ConfirmReadyButton } from './confirm-ready-button';
+import { DisbursementForm } from './disbursement-form';
 
 type AdminFormalizationPageProps = {
   params: Promise<{
@@ -106,7 +108,7 @@ export default async function AdminFormalizationPage({ params }: AdminFormalizat
             </h1>
 
             <p className="mt-3 text-slate-500">
-              Conferência dos dados para preparação da liberação.
+              Conferência, preparação e registro da liberação da operação.
             </p>
           </div>
 
@@ -119,7 +121,7 @@ export default async function AdminFormalizationPage({ params }: AdminFormalizat
           </div>
         </div>
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
           <div className="space-y-6">
             <Card title="Resumo da operação">
               <div className="grid gap-6 sm:grid-cols-3">
@@ -164,8 +166,8 @@ export default async function AdminFormalizationPage({ params }: AdminFormalizat
                 <p className="text-sm font-semibold text-red-800">Dados financeiros restritos</p>
 
                 <p className="mt-2 text-sm leading-6 text-red-700">
-                  Estas informações devem ser utilizadas somente para a conferência e execução da
-                  operação. Não copie dados bancários para mensagens, planilhas ou logs.
+                  Utilize estas informações somente para conferência e execução da operação. Não
+                  copie dados bancários para mensagens, planilhas ou logs.
                 </p>
               </div>
             </Card>
@@ -209,8 +211,8 @@ export default async function AdminFormalizationPage({ params }: AdminFormalizat
               ) : formalization.status === 'BANK_DETAILS_SUBMITTED' ? (
                 <>
                   <p className="text-sm leading-6 text-slate-600">
-                    Confira cuidadosamente banco, agência, conta, titular e demais informações antes
-                    de continuar.
+                    Confira cuidadosamente os dados da conta antes de preparar a operação para
+                    liberação.
                   </p>
 
                   <div className="mt-5">
@@ -218,21 +220,51 @@ export default async function AdminFormalizationPage({ params }: AdminFormalizat
                   </div>
                 </>
               ) : formalization.status === 'READY_FOR_DISBURSEMENT' ? (
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
-                  <p className="font-semibold text-emerald-900">✓ Conferência concluída</p>
+                <>
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+                    <p className="font-semibold text-emerald-900">✓ Conferência concluída</p>
 
-                  <p className="mt-2 text-sm leading-6 text-emerald-700">
-                    Esta operação está pronta para seguir para a etapa de liberação.
+                    <p className="mt-2 text-sm leading-6 text-emerald-700">
+                      A operação está pronta para liberação.
+                    </p>
+
+                    {formalization.readyAt && (
+                      <p className="mt-3 text-xs text-emerald-700">
+                        Confirmada em {formatDateTime(formalization.readyAt)}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="mt-6">
+                    <h3 className="text-base font-semibold text-[#071522]">Registrar liberação</h3>
+
+                    <p className="mt-2 text-sm leading-6 text-slate-500">
+                      Preencha somente depois que a transferência tiver sido efetivamente realizada.
+                    </p>
+
+                    <div className="mt-5">
+                      <DisbursementForm protocol={protocolLabel} />
+                    </div>
+                  </div>
+                </>
+              ) : formalization.status === 'DISBURSED' ? (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 font-bold text-white">
+                    ✓
+                  </div>
+
+                  <p className="mt-4 text-lg font-semibold text-emerald-950">Crédito liberado</p>
+
+                  <p className="mt-2 text-sm leading-6 text-emerald-800">
+                    A liberação financeira desta operação foi registrada como concluída.
                   </p>
 
-                  {formalization.readyAt && (
-                    <p className="mt-3 text-xs text-emerald-700">
-                      Confirmada em {formatDateTime(formalization.readyAt)}
+                  {formalization.disbursedAt && (
+                    <p className="mt-4 text-xs font-medium text-emerald-700">
+                      Registrada em {formatDateTime(formalization.disbursedAt)}
                     </p>
                   )}
                 </div>
-              ) : formalization.status === 'DISBURSED' ? (
-                <StatusMessage>Crédito registrado como liberado.</StatusMessage>
               ) : (
                 <StatusMessage>Esta formalização foi encerrada.</StatusMessage>
               )}
@@ -244,7 +276,7 @@ export default async function AdminFormalizationPage({ params }: AdminFormalizat
   );
 }
 
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
+function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
       <h2 className="text-xl font-semibold text-[#071522]">{title}</h2>
@@ -264,7 +296,7 @@ function Detail({ label, value }: { label: string; value: string }) {
   );
 }
 
-function StatusMessage({ children }: { children: React.ReactNode }) {
+function StatusMessage({ children }: { children: ReactNode }) {
   return (
     <div className="rounded-2xl bg-slate-100 p-5 text-sm font-medium leading-6 text-slate-600">
       {children}

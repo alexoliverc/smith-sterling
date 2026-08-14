@@ -169,22 +169,10 @@ export async function submitFormalizationBankData(
 
     const now = new Date();
 
-    /*
-     * Primeiro envio:
-     *
-     * PENDING
-     *   ↓
-     * BANK_DETAILS_SUBMITTED
-     *
-     * A mudança de status e o
-     * armazenamento criptografado
-     * acontecem na mesma transação.
-     */
     if (formalization.status === 'PENDING') {
       const updateResult = await tx.creditFormalization.updateMany({
         where: {
           id: formalizationId,
-
           status: 'PENDING',
         },
 
@@ -233,15 +221,6 @@ export async function submitFormalizationBankData(
       });
     }
 
-    /*
-     * Enquanto a formalização ainda
-     * estiver nesta etapa, o cliente
-     * pode corrigir os dados.
-     *
-     * Como o status não muda, não
-     * criamos um falso evento de
-     * transição.
-     */
     if (formalization.status === 'BANK_DETAILS_SUBMITTED') {
       const updateResult = await tx.creditFormalization.updateMany({
         where: {
@@ -278,5 +257,87 @@ export async function submitFormalizationBankData(
     }
 
     throw new FormalizationLockedError();
+  });
+}
+
+export async function registerFormalizationDisbursement(
+  formalizationId: string,
+  disbursementReferenceEncrypted: string,
+  options: TransitionOptions = {},
+) {
+  return prisma.$transaction(async (tx) => {
+    const formalization = await tx.creditFormalization.findUnique({
+      where: {
+        id: formalizationId,
+      },
+
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+
+    if (!formalization) {
+      throw new Error('Formalização não encontrada.');
+    }
+
+    const fromStatus = formalization.status;
+
+    const toStatus: FormalizationStatus = 'DISBURSED';
+
+    if (fromStatus !== 'READY_FOR_DISBURSEMENT') {
+      throw new InvalidFormalizationStatusTransitionError(fromStatus, toStatus);
+    }
+
+    const now = new Date();
+
+    const updateResult = await tx.creditFormalization.updateMany({
+      where: {
+        id: formalizationId,
+
+        status: 'READY_FOR_DISBURSEMENT',
+      },
+
+      data: {
+        status: 'DISBURSED',
+
+        disbursementReferenceEncrypted,
+
+        disbursedAt: now,
+      },
+    });
+
+    if (updateResult.count !== 1) {
+      throw new ConcurrentFormalizationStatusTransitionError();
+    }
+
+    await tx.formalizationStatusHistory.create({
+      data: {
+        formalizationId,
+
+        fromStatus: 'READY_FOR_DISBURSEMENT',
+
+        toStatus: 'DISBURSED',
+
+        actorType: options.actorType ?? 'SYSTEM',
+
+        actorId: options.actorId ?? null,
+
+        reason: options.reason ?? null,
+      },
+    });
+
+    return tx.creditFormalization.findUnique({
+      where: {
+        id: formalizationId,
+      },
+
+      select: {
+        id: true,
+        status: true,
+        disbursedAt: true,
+        updatedAt: true,
+      },
+    });
   });
 }
