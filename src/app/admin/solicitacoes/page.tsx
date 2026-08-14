@@ -1,3 +1,4 @@
+import { AdminLogoutButton } from '@/components/admin/logout-button';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -52,10 +53,14 @@ export default async function AdminApplicationsPage() {
             </div>
           </div>
 
-          <div className="text-right">
-            <p className="text-sm font-medium text-white">{session.user.name}</p>
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <p className="text-sm font-medium text-white">{session.user.name}</p>
 
-            <p className="text-xs text-slate-400">{formatRole(session.user.role)}</p>
+              <p className="text-xs text-slate-400">{formatRole(session.user.role)}</p>
+            </div>
+
+            <AdminLogoutButton />
           </div>
         </div>
       </header>
