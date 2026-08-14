@@ -80,6 +80,41 @@ export async function getAdminApplicationByProtocol(protocol: string) {
     return null;
   }
 
+  const operatorIds = [
+    ...new Set(
+      application.statusHistory
+        .filter((event) => event.actorType === 'OPERATOR' && event.actorId)
+        .map((event) => event.actorId as string),
+    ),
+  ];
+
+  const operators =
+    operatorIds.length > 0
+      ? await prisma.adminUser.findMany({
+          where: {
+            id: {
+              in: operatorIds,
+            },
+          },
+
+          select: {
+            id: true,
+            name: true,
+          },
+        })
+      : [];
+
+  const operatorNameById = new Map(operators.map((operator) => [operator.id, operator.name]));
+
+  const statusHistory = application.statusHistory.map((event) => ({
+    ...event,
+
+    actorName:
+      event.actorType === 'OPERATOR' && event.actorId
+        ? (operatorNameById.get(event.actorId) ?? 'Operador não encontrado')
+        : null,
+  }));
+
   if (!application.applicantData) {
     return {
       id: application.id,
@@ -93,14 +128,13 @@ export async function getAdminApplicationByProtocol(protocol: string) {
 
       applicant: null,
 
-      statusHistory: application.statusHistory,
+      statusHistory,
     };
   }
 
   const applicationId = application.id;
 
   const applicantData = application.applicantData;
-
 
   const address = parseJsonObject(
     decryptPii(applicantData.addressEncrypted, `${applicationId}:address`),
@@ -163,7 +197,7 @@ export async function getAdminApplicationByProtocol(protocol: string) {
       },
     },
 
-    statusHistory: application.statusHistory,
+    statusHistory,
   };
 }
 
