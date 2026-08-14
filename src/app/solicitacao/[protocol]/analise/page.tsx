@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
+import { AutoStatusRefresh } from './auto-status-refresh';
 
 import type { ApplicationStatus } from '@/generated/prisma/client';
 import { formatCurrency } from '@/lib/credit';
@@ -35,6 +36,14 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
 
   return (
     <main className="min-h-screen bg-[#f5f7fa]">
+      <AutoStatusRefresh
+      active={
+        application.status ===
+          'SUBMITTED' ||
+        application.status ===
+          'UNDER_REVIEW'
+      }
+    />
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
           <Link href="/" className="flex items-center gap-3">
