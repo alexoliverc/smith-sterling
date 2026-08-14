@@ -13,7 +13,8 @@
     "admin:create": "node --conditions=react-server --import=tsx scripts/create-admin.ts",
     "admin:reset-password": "node --conditions=react-server --import=tsx scripts/reset-admin-password.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "keywords": [],
   "author": "",
