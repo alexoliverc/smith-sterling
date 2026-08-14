@@ -50,6 +50,18 @@ export class CreditOfferAlreadyAcceptedError extends Error {
   }
 }
 
+export class CreditOfferExpirationTooShortError extends Error {
+  constructor() {
+    super(
+      'A proposta precisa permanecer válida por pelo menos 2 dias.',
+    );
+
+    this.name =
+      'CreditOfferExpirationTooShortError';
+  }
+}
+
+
 export async function publishCreditOffer(
   applicationId: string,
   input: PublishCreditOfferInput,
@@ -57,6 +69,23 @@ export async function publishCreditOffer(
 ) {
   return prisma.$transaction(async (tx) => {
     const now = new Date();
+
+    const minimumExpiration =
+      new Date(
+        now.getTime() +
+          2 *
+            24 *
+            60 *
+            60 *
+            1000,
+      );
+
+    if (
+      input.expiresAt <
+      minimumExpiration
+    ) {
+      throw new CreditOfferExpirationTooShortError();
+    }
 
     /*
      * Esta atualização também serializa
