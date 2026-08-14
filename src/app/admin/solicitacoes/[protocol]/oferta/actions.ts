@@ -14,7 +14,9 @@ import { getAdminCreditOfferWorkspace } from '@/server/dal/admin-credit-offers';
 
 import {
   CreditOfferAlreadyAcceptedError,
+  CreditOfferDisclosureIncompleteError,
   CreditOfferApplicationNotApprovedError,
+  CreditOfferExpirationTooShortError,
   publishCreditOffer,
 } from '@/server/workflows/credit-offer';
 
@@ -93,6 +95,51 @@ const offerSchema =
 
     cetAnnual:
       percentageSchema,
+
+    lateInterestMonthly:
+      percentageSchema,
+
+    latePenalty:
+      percentageSchema,
+
+    lateOtherChargesDescription:
+      z
+        .string()
+        .trim()
+        .min(
+          2,
+          'Informe os demais encargos de atraso ou declare expressamente que não existem.',
+        )
+        .max(
+          500,
+          'A descrição dos encargos de atraso pode ter no máximo 500 caracteres.',
+        ),
+
+    defaultConsequences:
+      z
+        .string()
+        .trim()
+        .min(
+          10,
+          'Descreva as consequências do inadimplemento.',
+        )
+        .max(
+          1000,
+          'A descrição das consequências pode ter no máximo 1000 caracteres.',
+        ),
+
+    cetCompositionDescription:
+      z
+        .string()
+        .trim()
+        .min(
+          10,
+          'Descreva a composição do CET.',
+        )
+        .max(
+          1000,
+          'A composição do CET pode ter no máximo 1000 caracteres.',
+        ),
 
     firstDueDate:
       dateSchema,
@@ -220,6 +267,31 @@ export async function publishOffer(
       cetAnnual:
         formData.get(
           'cetAnnual',
+        ),
+
+      lateInterestMonthly:
+        formData.get(
+          'lateInterestMonthly',
+        ),
+
+      latePenalty:
+        formData.get(
+          'latePenalty',
+        ),
+
+      lateOtherChargesDescription:
+        formData.get(
+          'lateOtherChargesDescription',
+        ),
+
+      defaultConsequences:
+        formData.get(
+          'defaultConsequences',
+        ),
+
+      cetCompositionDescription:
+        formData.get(
+          'cetCompositionDescription',
         ),
 
       firstDueDate:
@@ -440,6 +512,25 @@ export async function publishOffer(
             parsed.data.cetAnnual,
           ),
 
+        lateInterestMonthlyPercent:
+          normalizeDecimal(
+            parsed.data.lateInterestMonthly,
+          ),
+
+        latePenaltyPercent:
+          normalizeDecimal(
+            parsed.data.latePenalty,
+          ),
+
+        lateOtherChargesDescription:
+          parsed.data.lateOtherChargesDescription,
+
+        defaultConsequences:
+          parsed.data.defaultConsequences,
+
+        cetCompositionDescription:
+          parsed.data.cetCompositionDescription,
+
         firstDueDate,
         expiresAt,
 
@@ -456,7 +547,11 @@ export async function publishOffer(
       error instanceof
         CreditOfferApplicationNotApprovedError ||
       error instanceof
-        CreditOfferAlreadyAcceptedError
+        CreditOfferAlreadyAcceptedError ||
+      error instanceof
+        CreditOfferExpirationTooShortError ||
+      error instanceof
+        CreditOfferDisclosureIncompleteError
     ) {
       return {
         error:

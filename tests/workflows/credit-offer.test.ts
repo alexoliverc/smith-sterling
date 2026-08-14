@@ -43,6 +43,8 @@ vi.mock('@/lib/prisma', () => ({
 import {
   CreditOfferAlreadyAcceptedError,
   CreditOfferApplicationNotApprovedError,
+  CreditOfferDisclosureIncompleteError,
+  CreditOfferExpirationTooShortError,
   publishCreditOffer,
 } from '@/server/workflows/credit-offer';
 
@@ -61,6 +63,18 @@ const input = {
   monthlyRatePercent: '2.5',
   annualRatePercent: '34.49',
   cetAnnualPercent: '39.1',
+
+  lateInterestMonthlyPercent: '1',
+  latePenaltyPercent: '2',
+
+  lateOtherChargesDescription:
+    'Não há outros encargos de atraso além dos informados.',
+
+  defaultConsequences:
+    'O atraso poderá gerar os encargos informados e as medidas de cobrança previstas na contratação.',
+
+  cetCompositionDescription:
+    'O CET considera juros, IOF e os demais encargos informados nesta proposta.',
 
   firstDueDate:
     new Date(
@@ -243,6 +257,21 @@ describe('credit-offer - publicação administrativa', () => {
 
         cetAnnualPercent:
           input.cetAnnualPercent,
+
+        lateInterestMonthlyPercent:
+          input.lateInterestMonthlyPercent,
+
+        latePenaltyPercent:
+          input.latePenaltyPercent,
+
+        lateOtherChargesDescription:
+          input.lateOtherChargesDescription,
+
+        defaultConsequences:
+          input.defaultConsequences,
+
+        cetCompositionDescription:
+          input.cetCompositionDescription,
 
         firstDueDate:
           input.firstDueDate,
@@ -427,5 +456,51 @@ describe('credit-offer - publicação administrativa', () => {
           }),
       }),
     );
+  });
+
+  it('bloqueia proposta com validade inferior a 2 dias', async () => {
+    await expect(
+      publishCreditOffer(
+        'application-1',
+        {
+          ...input,
+
+          expiresAt:
+            new Date(
+              '2026-08-15T15:00:00.000Z',
+            ),
+        },
+        {
+          actorId: 'admin-1',
+        },
+      ),
+    ).rejects.toBeInstanceOf(
+      CreditOfferExpirationTooShortError,
+    );
+
+    expect(
+      mocks.tx.creditApplication.update,
+    ).not.toHaveBeenCalled();
+  });
+
+  it('bloqueia proposta com divulgacoes contratuais incompletas', async () => {
+    await expect(
+      publishCreditOffer(
+        'application-1',
+        {
+          ...input,
+          defaultConsequences: '',
+        },
+        {
+          actorId: 'admin-1',
+        },
+      ),
+    ).rejects.toBeInstanceOf(
+      CreditOfferDisclosureIncompleteError,
+    );
+
+    expect(
+      mocks.tx.creditApplication.update,
+    ).not.toHaveBeenCalled();
   });
 });

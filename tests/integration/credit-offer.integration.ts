@@ -120,6 +120,21 @@ describe('credit-offer - integração MySQL', () => {
           cetAnnualPercent:
             '39.10',
 
+          lateInterestMonthlyPercent:
+            '1',
+
+          latePenaltyPercent:
+            '2',
+
+          lateOtherChargesDescription:
+            'Não há outros encargos de atraso além dos informados.',
+
+          defaultConsequences:
+            'O atraso poderá gerar os encargos informados e as medidas de cobrança previstas na contratação.',
+
+          cetCompositionDescription:
+            'O CET considera juros, IOF e os demais encargos informados nesta proposta.',
+
           firstDueDate,
 
           expiresAt,

@@ -18,6 +18,18 @@ type PublishCreditOfferInput = {
   annualRatePercent: string;
   cetAnnualPercent: string;
 
+  /*
+   * O banco aceita NULL para preservar
+   * propostas historicas. A interface
+   * administrativa exige estes dados
+   * nas novas publicacoes.
+   */
+  lateInterestMonthlyPercent: string;
+  latePenaltyPercent: string;
+  lateOtherChargesDescription: string;
+  defaultConsequences: string;
+  cetCompositionDescription: string;
+
   firstDueDate: Date;
   expiresAt: Date;
 
@@ -62,6 +74,17 @@ export class CreditOfferExpirationTooShortError extends Error {
 }
 
 
+export class CreditOfferDisclosureIncompleteError extends Error {
+  constructor() {
+    super(
+      'A proposta precisa informar as condições de atraso, consequências do inadimplemento e composição do CET.',
+    );
+
+    this.name =
+      'CreditOfferDisclosureIncompleteError';
+  }
+}
+
 export async function publishCreditOffer(
   applicationId: string,
   input: PublishCreditOfferInput,
@@ -69,6 +92,29 @@ export async function publishCreditOffer(
 ) {
   return prisma.$transaction(async (tx) => {
     const now = new Date();
+
+    const lateInterest =
+      Number(
+        input.lateInterestMonthlyPercent,
+      );
+
+    const latePenalty =
+      Number(
+        input.latePenaltyPercent,
+      );
+
+    const disclosuresAreValid =
+      Number.isFinite(lateInterest) &&
+      lateInterest >= 0 &&
+      Number.isFinite(latePenalty) &&
+      latePenalty >= 0 &&
+      input.lateOtherChargesDescription.trim().length >= 2 &&
+      input.defaultConsequences.trim().length >= 10 &&
+      input.cetCompositionDescription.trim().length >= 10;
+
+    if (!disclosuresAreValid) {
+      throw new CreditOfferDisclosureIncompleteError();
+    }
 
     const minimumExpiration =
       new Date(
@@ -258,6 +304,21 @@ export async function publishCreditOffer(
 
           cetAnnualPercent:
             input.cetAnnualPercent,
+
+          lateInterestMonthlyPercent:
+            input.lateInterestMonthlyPercent,
+
+          latePenaltyPercent:
+            input.latePenaltyPercent,
+
+          lateOtherChargesDescription:
+            input.lateOtherChargesDescription,
+
+          defaultConsequences:
+            input.defaultConsequences,
+
+          cetCompositionDescription:
+            input.cetCompositionDescription,
 
           firstDueDate:
             input.firstDueDate,
