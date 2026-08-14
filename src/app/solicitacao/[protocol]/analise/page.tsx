@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
+import { getApplicationStatusPresentation } from '@/lib/application-status';
 
 import { formatCurrency } from '@/lib/credit';
 import { findApplicationForSession } from '@/server/dal/credit-application';
@@ -22,6 +23,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
   }
 
   const application = await findApplicationForSession(protocol, accessToken);
+  const presentation = getApplicationStatusPresentation(application.status);
 
   if (!application) {
     notFound();
@@ -35,11 +37,11 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
         </div>
 
         <p className="mt-8 text-sm font-semibold uppercase tracking-[0.14em] text-blue-600">
-          Solicitação recebida
+          {presentation.eyebrow}
         </p>
 
         <h1 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-[#0b1f33]">
-          Sua solicitação está em análise.
+          {presentation.title}
         </h1>
 
         <p className="mt-5 text-lg leading-8 text-slate-600">
@@ -53,7 +55,7 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
 
           <Detail label="Prazo" value={`${application.months} meses`} />
 
-          <Detail label="Status" value="Recebida" />
+          <Detail label="Status" value={presentation.label} />
         </div>
 
         <p className="mt-8 text-sm leading-6 text-slate-500">
