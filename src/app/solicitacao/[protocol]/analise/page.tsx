@@ -2,325 +2,415 @@ import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 
-import { getApplicationStatusPresentation } from '@/lib/application-status';
+import type { ApplicationStatus } from '@/generated/prisma/client';
 import { formatCurrency } from '@/lib/credit';
-import { ADMIN_SESSION_COOKIE, findAdminSession } from '@/server/auth/admin-session';
-import { getAdminApplicationByProtocol } from '@/server/dal/admin-applications';
+import { findApplicationForSession } from '@/server/dal/credit-application';
 
-type AdminApplicationPageProps = {
+const APPLICATION_SESSION_COOKIE = 'smith_application_session';
+
+type AnalysisPageProps = {
   params: Promise<{
     protocol: string;
   }>;
 };
 
-export default async function AdminApplicationPage({ params }: AdminApplicationPageProps) {
-  const cookieStore = await cookies();
-
-  const token = cookieStore.get(ADMIN_SESSION_COOKIE)?.value;
-
-  if (!token) {
-    redirect('/admin/login');
-  }
-
-  const session = await findAdminSession(token);
-
-  if (!session) {
-    redirect('/admin/login');
-  }
-
+export default async function AnalysisPage({ params }: AnalysisPageProps) {
   const { protocol } = await params;
 
-  const application = await getAdminApplicationByProtocol(protocol);
+  const cookieStore = await cookies();
+
+  const accessToken = cookieStore.get(APPLICATION_SESSION_COOKIE)?.value;
+
+  if (!accessToken) {
+    redirect('/solicitacao');
+  }
+
+  const application = await findApplicationForSession(protocol, accessToken);
 
   if (!application) {
     notFound();
   }
 
-  const status = getApplicationStatusPresentation(application.status);
+  const presentation = getStatusPresentation(application.status);
 
   return (
-    <main className="min-h-screen bg-slate-50">
-      <header className="border-b border-white/10 bg-[#071522]">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-5">
-          <div className="flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-sm font-bold text-[#0b1f33]">
+    <main className="min-h-screen bg-[#f5f7fa]">
+      <header className="border-b border-slate-200 bg-white">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#071522] text-sm font-bold text-white">
               SS
             </div>
 
             <div>
-              <p className="font-semibold text-white">Smith Sterling</p>
+              <p className="font-semibold tracking-tight text-[#071522]">Smith Sterling</p>
 
-              <p className="text-xs text-slate-400">Análise de crédito</p>
+              <p className="text-xs text-slate-500">Crédito com clareza</p>
             </div>
-          </div>
+          </Link>
 
-          <div className="text-right">
-            <p className="text-sm font-medium text-white">{session.user.name}</p>
+          <div className="hidden text-right sm:block">
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-slate-400">
+              Protocolo
+            </p>
 
-            <p className="text-xs text-slate-400">{formatRole(session.user.role)}</p>
+            <p className="mt-1 font-mono text-sm font-semibold text-[#071522]">{protocol}</p>
           </div>
         </div>
       </header>
 
-      <section className="mx-auto max-w-7xl px-6 py-10 md:py-12">
-        <Link
-          href="/admin/solicitacoes"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 transition hover:text-blue-700"
-        >
-          ← Voltar para solicitações
-        </Link>
-
-        <div className="mt-8 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.14em] text-blue-600">
-              Proposta de crédito
-            </p>
-
-            <h1 className="mt-3 font-mono text-3xl font-semibold tracking-[-0.03em] text-[#0b1f33]">
-              {application.publicProtocol}
-            </h1>
-
-            <p className="mt-3 max-w-2xl text-slate-500">
-              Consulte os dados cadastrais, financeiros e o histórico operacional desta solicitação.
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white px-6 py-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-              Status atual
-            </p>
-
-            <p className="mt-2 font-semibold text-[#0b1f33]">{status.label}</p>
-          </div>
-        </div>
-
-        <div className="mt-10 grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="space-y-6">
-            <Card title="Resumo da operação">
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                <Detail label="Valor solicitado" value={formatCurrency(application.amount)} />
-
-                <Detail label="Prazo" value={`${application.months} meses`} />
-
-                <Detail
-                  label="Recebida em"
-                  value={formatDateTime(application.submittedAt ?? application.createdAt)}
-                />
-
-                <Detail label="Status" value={status.label} />
+      <section className="mx-auto max-w-4xl px-6 py-12 md:py-16">
+        <div className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
+          <div className={`border-b px-6 py-8 md:px-10 ${presentation.headerClassName}`}>
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+              <div
+                className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-2xl font-bold ${presentation.iconClassName}`}
+              >
+                {presentation.icon}
               </div>
-            </Card>
 
-            {application.applicant ? (
-              <>
-                <Card title="Dados cadastrais">
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <Detail label="Nome completo" value={application.applicant.name} />
-
-                    <Detail label="CPF" value={formatCpf(application.applicant.cpf)} />
-
-                    <Detail
-                      label="Data de nascimento"
-                      value={formatBirthDate(application.applicant.birthDate)}
-                    />
-
-                    <Detail label="Telefone" value={application.applicant.phone} />
-
-                    <Detail label="E-mail" value={application.applicant.email} />
-                  </div>
-                </Card>
-
-                <Card title="Endereço residencial">
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <Detail label="CEP" value={application.applicant.address.cep} />
-
-                    <Detail label="Endereço" value={formatAddress(application.applicant.address)} />
-
-                    <Detail label="Bairro" value={application.applicant.address.neighborhood} />
-
-                    <Detail
-                      label="Cidade / UF"
-                      value={formatCityState(
-                        application.applicant.address.city,
-                        application.applicant.address.state,
-                      )}
-                    />
-                  </div>
-                </Card>
-
-                <Card title="Perfil financeiro">
-                  <div className="grid gap-6 md:grid-cols-3">
-                    <Detail
-                      label="Situação profissional"
-                      value={formatEmploymentType(application.applicant.employment.employmentType)}
-                    />
-
-                    <Detail
-                      label="Profissão / ocupação"
-                      value={application.applicant.employment.occupation}
-                    />
-
-                    <Detail label="Renda declarada" value={application.applicant.income} />
-                  </div>
-                </Card>
-              </>
-            ) : (
-              <Card title="Dados cadastrais">
-                <p className="text-sm leading-6 text-slate-500">
-                  Esta solicitação não possui dados cadastrais associados.
+              <div>
+                <p
+                  className={`text-sm font-semibold uppercase tracking-[0.14em] ${presentation.eyebrowClassName}`}
+                >
+                  {presentation.eyebrow}
                 </p>
-              </Card>
-            )}
+
+                <h1 className="mt-2 text-3xl font-semibold tracking-[-0.035em] text-[#071522] md:text-4xl">
+                  {presentation.title}
+                </h1>
+
+                <p className="mt-3 max-w-2xl leading-7 text-slate-600">
+                  {presentation.description}
+                </p>
+              </div>
+            </div>
           </div>
 
-          <aside className="space-y-6">
-            <Card title="Histórico da operação">
-              {application.statusHistory.length === 0 ? (
-                <p className="text-sm text-slate-500">Nenhum evento registrado.</p>
-              ) : (
-                <div className="space-y-6">
-                  {application.statusHistory.map((event) => (
-                    <div key={event.id} className="relative border-l-2 border-slate-200 pl-5">
-                      <div className="absolute -left-[5px] top-1 h-2 w-2 rounded-full bg-blue-600" />
+          <div className="px-6 py-8 md:px-10 md:py-10">
+            <div className="grid gap-5 sm:grid-cols-3">
+              <SummaryItem label="Protocolo" value={protocol} mono />
 
-                      <p className="text-sm font-semibold text-[#0b1f33]">
-                        {formatStatus(event.fromStatus)}
-                        {' → '}
-                        {formatStatus(event.toStatus)}
-                      </p>
+              <SummaryItem label="Valor solicitado" value={formatCurrency(application.amount)} />
 
-                      <p className="mt-2 text-xs text-slate-500">
-                        {formatDateTime(event.createdAt)}
-                      </p>
-
-                      <p className="mt-2 text-xs font-medium text-slate-500">
-                        Origem: {formatActor(event.actorType)}
-                      </p>
-
-                      {event.reason && (
-                        <p className="mt-3 text-sm leading-6 text-slate-600">{event.reason}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Card>
-
-            <div className="rounded-3xl border border-blue-100 bg-blue-50 p-6">
-              <p className="text-sm font-semibold text-[#0b1f33]">Área administrativa</p>
-
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                Os dados exibidos nesta página são destinados ao processamento interno da
-                solicitação.
-              </p>
+              <SummaryItem label="Prazo" value={`${application.months} meses`} />
             </div>
-          </aside>
+
+            <div className="mt-10">
+              <Progress status={application.status} />
+            </div>
+
+            <StatusContent status={application.status} />
+
+            <div className="mt-10 border-t border-slate-200 pt-6">
+              <div className="flex flex-col gap-4 rounded-2xl bg-slate-50 p-5 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-[#071522]">Guarde seu protocolo</p>
+
+                  <p className="mt-1 text-sm leading-6 text-slate-500">
+                    Ele identifica esta solicitação dentro da Smith Sterling.
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 font-mono text-sm font-semibold text-[#071522]">
+                  {protocol}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+
+        <p className="mx-auto mt-6 max-w-2xl text-center text-xs leading-5 text-slate-400">
+          Esta página apresenta somente o andamento da sua solicitação. Nunca compartilhe
+          informações pessoais ou credenciais com terceiros.
+        </p>
       </section>
     </main>
   );
 }
 
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
+function SummaryItem({
+  label,
+  value,
+  mono = false,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
-      <h2 className="text-xl font-semibold text-[#0b1f33]">{title}</h2>
-
-      <div className="mt-6">{children}</div>
-    </section>
-  );
-}
-
-function Detail({ label, value }: { label: string; value?: string }) {
-  return (
-    <div>
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
       <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p>
 
-      <p className="mt-2 break-words font-medium text-slate-800">{value || '—'}</p>
+      <p
+        className={`mt-2 break-words font-semibold text-[#071522] ${
+          mono ? 'font-mono text-sm' : 'text-lg'
+        }`}
+      >
+        {value}
+      </p>
     </div>
   );
 }
 
-function formatDateTime(date: Date) {
-  return new Intl.DateTimeFormat('pt-BR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-    timeZone: 'America/Bahia',
-  }).format(date);
+function Progress({ status }: { status: ApplicationStatus }) {
+  const currentStep = getCurrentStep(status);
+
+  const steps = [
+    {
+      number: 1,
+      title: 'Recebida',
+      description: 'Solicitação registrada',
+    },
+    {
+      number: 2,
+      title: 'Análise',
+      description: 'Avaliação da proposta',
+    },
+    {
+      number: 3,
+      title: 'Decisão',
+      description: 'Resultado da análise',
+    },
+  ];
+
+  return (
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Andamento</p>
+
+      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+        {steps.map((step) => {
+          const completed = step.number < currentStep;
+
+          const active = step.number === currentStep;
+
+          return (
+            <div
+              key={step.number}
+              className={`rounded-2xl border p-4 transition ${
+                completed
+                  ? 'border-emerald-200 bg-emerald-50'
+                  : active
+                    ? 'border-blue-200 bg-blue-50'
+                    : 'border-slate-200 bg-white'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                    completed
+                      ? 'bg-emerald-600 text-white'
+                      : active
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-slate-100 text-slate-400'
+                  }`}
+                >
+                  {completed ? '✓' : step.number}
+                </div>
+
+                <div>
+                  <p
+                    className={`text-sm font-semibold ${
+                      completed ? 'text-emerald-800' : active ? 'text-blue-800' : 'text-slate-400'
+                    }`}
+                  >
+                    {step.title}
+                  </p>
+
+                  <p className="mt-0.5 text-xs text-slate-500">{step.description}</p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
-function formatBirthDate(value: string) {
-  const [year, month, day] = value.split('-');
-
-  if (!year || !month || !day) {
-    return value;
+function StatusContent({ status }: { status: ApplicationStatus }) {
+  if (status === 'DRAFT') {
+    return (
+      <StatusBox
+        title="Sua solicitação ainda não foi enviada"
+        description="Existem informações pendentes antes que a proposta possa seguir para análise."
+      />
+    );
   }
 
-  return `${day}/${month}/${year}`;
-}
-
-function formatCpf(value: string) {
-  const cpf = value.replace(/\D/g, '');
-
-  if (cpf.length !== 11) {
-    return value;
+  if (status === 'SUBMITTED') {
+    return (
+      <StatusBox
+        title="Recebemos sua solicitação"
+        description="Seus dados foram registrados com sucesso. A proposta está aguardando o início da análise."
+      />
+    );
   }
 
-  return `${cpf.slice(0, 3)}.${cpf.slice(3, 6)}.${cpf.slice(6, 9)}-${cpf.slice(9)}`;
-}
-
-function formatAddress(address: { street: string; number: string; complement: string }) {
-  return [address.street, address.number, address.complement].filter(Boolean).join(', ');
-}
-
-function formatCityState(city: string, state: string) {
-  if (!city && !state) {
-    return '—';
+  if (status === 'UNDER_REVIEW') {
+    return (
+      <StatusBox
+        title="Sua proposta está sendo analisada"
+        description="Nossa equipe está avaliando as informações da solicitação. O resultado será registrado assim que a análise for concluída."
+      />
+    );
   }
 
-  if (!state) {
-    return city;
+  if (status === 'APPROVED') {
+    return (
+      <div className="mt-10 rounded-3xl border border-emerald-200 bg-emerald-50 p-6 md:p-8">
+        <div className="flex gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-600 font-bold text-white">
+            ✓
+          </div>
+
+          <div>
+            <h2 className="text-xl font-semibold text-emerald-950">Sua solicitação foi aprovada</h2>
+
+            <p className="mt-3 leading-7 text-emerald-800">
+              A análise de crédito foi concluída com resultado positivo. As próximas etapas
+              necessárias para formalização da operação serão apresentadas separadamente.
+            </p>
+
+            <p className="mt-4 text-sm leading-6 text-emerald-700">
+              A aprovação apresentada nesta página não solicita pagamento antecipado para consulta
+              do resultado.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  if (!city) {
-    return state;
+  if (status === 'REJECTED') {
+    return (
+      <div className="mt-10 rounded-3xl border border-slate-200 bg-slate-50 p-6 md:p-8">
+        <h2 className="text-xl font-semibold text-[#071522]">Solicitação não aprovada</h2>
+
+        <p className="mt-3 leading-7 text-slate-600">
+          A análise desta proposta foi concluída e, neste momento, não foi possível seguir com a
+          operação de crédito.
+        </p>
+
+        <p className="mt-4 text-sm leading-6 text-slate-500">
+          Uma nova solicitação poderá estar sujeita a uma nova análise e às condições aplicáveis
+          naquele momento.
+        </p>
+      </div>
+    );
   }
 
-  return `${city} / ${state}`;
+  return (
+    <div className="mt-10 rounded-3xl border border-slate-200 bg-slate-50 p-6 md:p-8">
+      <h2 className="text-xl font-semibold text-[#071522]">Solicitação encerrada</h2>
+
+      <p className="mt-3 leading-7 text-slate-600">Esta solicitação não está mais ativa.</p>
+    </div>
+  );
 }
 
-function formatEmploymentType(value: string) {
-  const labels: Record<string, string> = {
-    clt: 'Empregado CLT',
-    autonomo: 'Autônomo',
-    empresario: 'Empresário',
-    servidor: 'Servidor público',
-    aposentado: 'Aposentado / Pensionista',
-    outro: 'Outro',
-  };
+function StatusBox({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="mt-10 rounded-3xl border border-blue-100 bg-blue-50/70 p-6 md:p-8">
+      <h2 className="text-xl font-semibold text-[#071522]">{title}</h2>
 
-  return labels[value] ?? value;
+      <p className="mt-3 leading-7 text-slate-600">{description}</p>
+
+      <div className="mt-5 flex items-start gap-3 rounded-2xl bg-white/70 p-4">
+        <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">
+          i
+        </div>
+
+        <p className="text-sm leading-6 text-slate-600">
+          Atualize esta página posteriormente para consultar o status mais recente da solicitação.
+        </p>
+      </div>
+    </div>
+  );
 }
 
-function formatStatus(
-  status: 'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED' | 'CANCELLED',
-) {
-  const labels = {
-    DRAFT: 'Rascunho',
-    SUBMITTED: 'Recebida',
-    UNDER_REVIEW: 'Em análise',
-    APPROVED: 'Aprovada',
-    REJECTED: 'Não aprovada',
-    CANCELLED: 'Cancelada',
-  };
+function getCurrentStep(status: ApplicationStatus) {
+  switch (status) {
+    case 'DRAFT':
+    case 'SUBMITTED':
+      return 1;
 
-  return labels[status];
+    case 'UNDER_REVIEW':
+      return 2;
+
+    case 'APPROVED':
+    case 'REJECTED':
+    case 'CANCELLED':
+      return 3;
+  }
 }
 
-function formatActor(actor: 'SYSTEM' | 'OPERATOR') {
-  return actor === 'SYSTEM' ? 'Sistema' : 'Operador';
-}
+function getStatusPresentation(status: ApplicationStatus) {
+  switch (status) {
+    case 'DRAFT':
+      return {
+        eyebrow: 'Solicitação em andamento',
+        title: 'Continue sua solicitação',
+        description: 'Ainda existem etapas pendentes antes do envio para análise.',
+        icon: '1',
+        headerClassName: 'border-slate-200 bg-slate-50',
+        iconClassName: 'bg-slate-200 text-slate-700',
+        eyebrowClassName: 'text-slate-500',
+      };
 
-function formatRole(role: 'SUPER_ADMIN' | 'ANALYST') {
-  return role === 'SUPER_ADMIN' ? 'Super administrador' : 'Analista';
+    case 'SUBMITTED':
+      return {
+        eyebrow: 'Solicitação recebida',
+        title: 'Recebemos seus dados',
+        description: 'Sua solicitação foi registrada e está aguardando análise.',
+        icon: '✓',
+        headerClassName: 'border-blue-100 bg-blue-50',
+        iconClassName: 'bg-blue-600 text-white',
+        eyebrowClassName: 'text-blue-700',
+      };
+
+    case 'UNDER_REVIEW':
+      return {
+        eyebrow: 'Crédito em análise',
+        title: 'Estamos analisando sua proposta',
+        description: 'Sua solicitação está passando pelo processo interno de análise de crédito.',
+        icon: '•••',
+        headerClassName: 'border-amber-100 bg-amber-50',
+        iconClassName: 'bg-amber-500 text-white',
+        eyebrowClassName: 'text-amber-700',
+      };
+
+    case 'APPROVED':
+      return {
+        eyebrow: 'Análise concluída',
+        title: 'Crédito aprovado',
+        description: 'A análise da sua solicitação foi concluída com resultado positivo.',
+        icon: '✓',
+        headerClassName: 'border-emerald-100 bg-emerald-50',
+        iconClassName: 'bg-emerald-600 text-white',
+        eyebrowClassName: 'text-emerald-700',
+      };
+
+    case 'REJECTED':
+      return {
+        eyebrow: 'Análise concluída',
+        title: 'Solicitação não aprovada',
+        description: 'A análise foi concluída e a operação não poderá seguir neste momento.',
+        icon: '—',
+        headerClassName: 'border-slate-200 bg-slate-50',
+        iconClassName: 'bg-slate-700 text-white',
+        eyebrowClassName: 'text-slate-600',
+      };
+
+    case 'CANCELLED':
+      return {
+        eyebrow: 'Solicitação encerrada',
+        title: 'Esta solicitação foi encerrada',
+        description: 'O processo referente a este protocolo não está mais ativo.',
+        icon: '×',
+        headerClassName: 'border-slate-200 bg-slate-50',
+        iconClassName: 'bg-slate-500 text-white',
+        eyebrowClassName: 'text-slate-500',
+      };
+  }
 }
