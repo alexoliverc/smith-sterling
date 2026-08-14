@@ -20,6 +20,18 @@ type AdminCreditOfferPageProps = {
   }>;
 };
 
+type CreditOfferWorkspace =
+  NonNullable<
+    Awaited<
+      ReturnType<
+        typeof getAdminCreditOfferWorkspace
+      >
+    >
+  >;
+
+type OfferAuditEvent =
+  CreditOfferWorkspace['offers'][number]['statusHistory'][number];
+
 export default async function AdminCreditOfferPage({
   params,
 }: AdminCreditOfferPageProps) {
@@ -347,6 +359,12 @@ export default async function AdminCreditOfferPage({
                             }
                           />
                         </dl>
+
+                        <OfferAuditTimeline
+                          events={
+                            offer.statusHistory
+                          }
+                        />
                       </article>
                     ),
                   )}
@@ -407,6 +425,182 @@ export default async function AdminCreditOfferPage({
     </main>
   );
 }
+
+function OfferAuditTimeline({
+  events,
+}: {
+  events: OfferAuditEvent[];
+}) {
+  return (
+    <div className="mt-5 border-t border-slate-100 pt-5">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Auditoria
+          </p>
+
+          <h3 className="mt-1 text-sm font-semibold text-[#071522]">
+            Histórico da versão
+          </h3>
+        </div>
+
+        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500">
+          {events.length}{' '}
+          {events.length === 1
+            ? 'evento'
+            : 'eventos'}
+        </span>
+      </div>
+
+      {events.length === 0 ? (
+        <div className="mt-4 rounded-xl bg-slate-50 p-4">
+          <p className="text-xs leading-5 text-slate-500">
+            Nenhum evento de auditoria registrado para esta versão.
+          </p>
+        </div>
+      ) : (
+        <ol className="mt-5 space-y-5">
+          {events.map(
+            (event, index) => {
+              const actor =
+                getOfferActorPresentation(
+                  event,
+                );
+
+              return (
+                <li
+                  key={event.id}
+                  className="relative pl-6"
+                >
+                  {index <
+                    events.length -
+                      1 && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute left-[5px] top-4 h-[calc(100%+8px)] w-px bg-slate-200"
+                    />
+                  )}
+
+                  <span
+                    aria-hidden="true"
+                    className={`absolute left-0 top-1.5 h-2.5 w-2.5 rounded-full ${actor.dotClassName}`}
+                  />
+
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <p
+                      className={`text-xs font-semibold ${actor.className}`}
+                    >
+                      {actor.label}
+                    </p>
+
+                    <span className="text-xs text-slate-300">
+                      ·
+                    </span>
+
+                    <time className="text-xs text-slate-400">
+                      {formatDateTime(
+                        event.createdAt,
+                      )}
+                    </time>
+                  </div>
+
+                  <p className="mt-1 text-xs font-semibold text-slate-700">
+                    {formatOfferStatus(
+                      event.fromStatus,
+                    )}{' '}
+                    →{' '}
+                    {formatOfferStatus(
+                      event.toStatus,
+                    )}
+                  </p>
+
+                  {event.reason && (
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                      {event.reason}
+                    </p>
+                  )}
+                </li>
+              );
+            },
+          )}
+        </ol>
+      )}
+    </div>
+  );
+}
+
+function getOfferActorPresentation(
+  event: OfferAuditEvent,
+) {
+  switch (event.actorType) {
+    case 'OPERATOR':
+      return {
+        label:
+          event.actorName
+            ? `Operador · ${event.actorName}`
+            : 'Operador',
+
+        className:
+          'text-blue-700',
+
+        dotClassName:
+          'bg-blue-500',
+      };
+
+    case 'APPLICANT':
+      return {
+        label:
+          'Cliente',
+
+        className:
+          'text-emerald-700',
+
+        dotClassName:
+          'bg-emerald-500',
+      };
+
+    case 'SYSTEM':
+    default:
+      return {
+        label:
+          'Sistema',
+
+        className:
+          'text-slate-600',
+
+        dotClassName:
+          'bg-slate-400',
+      };
+  }
+}
+
+function formatOfferStatus(
+  status: string,
+) {
+  switch (status) {
+    case 'DRAFT':
+      return 'Rascunho';
+
+    case 'PRESENTED':
+      return 'Apresentada';
+
+    case 'ACCEPTED':
+      return 'Aceita';
+
+    case 'DECLINED':
+      return 'Recusada';
+
+    case 'EXPIRED':
+      return 'Expirada';
+
+    case 'CANCELLED':
+      return 'Cancelada';
+
+    default:
+      return status;
+  }
+}
+
 
 function OfferDetail({
   label,
