@@ -33,6 +33,12 @@ export const institution = {
 
     phoneIsPlaceholder:
       true,
+
+    hours:
+      'A definir',
+
+    hoursIsPlaceholder:
+      true,
   },
 
   privacy: {
@@ -70,6 +76,7 @@ export function hasProductionInstitutionalData() {
     !institution.address.isPlaceholder &&
     !institution.support.emailIsPlaceholder &&
     !institution.support.phoneIsPlaceholder &&
+    !institution.support.hoursIsPlaceholder &&
     !institution.privacy.emailIsPlaceholder &&
     !institution.privacy.officerIsPlaceholder &&
     institution.regulatory.authorizationConfirmed
