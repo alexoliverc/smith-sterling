@@ -1,8 +1,16 @@
 import 'server-only';
 
 import { prisma } from '@/lib/prisma';
-import { createApplicationAccess, hashApplicationToken } from '@/lib/security/application-session';
-import { createLookupHash, encryptPii } from '@/lib/security/pii';
+import {
+  createApplicationAccess,
+  createApplicationToken,
+  hashApplicationToken,
+} from '@/lib/security/application-session';
+import {
+  createLookupHash,
+  decryptPii,
+  encryptPii,
+} from '@/lib/security/pii';
 import { applicationSchema, type ApplicationFormData } from '@/lib/schemas/application';
 import { cleanCpf } from '@/lib/validation/cpf';
 
@@ -175,3 +183,129 @@ export async function findApplicationForSession(protocol: string, accessToken: s
     },
   });
 }
+
+type RecoverApplicationAccessInput = {
+  protocol: string;
+  cpf: string;
+  birthDate: string;
+};
+
+export async function recoverApplicationAccess(
+  input: RecoverApplicationAccessInput,
+) {
+  const protocol =
+    input.protocol
+      .trim()
+      .toUpperCase();
+
+  const cpf =
+    cleanCpf(input.cpf);
+
+  const birthDate =
+    input.birthDate.trim();
+
+  const cpfLookupHash =
+    createLookupHash(cpf);
+
+  const application =
+    await prisma.creditApplication.findUnique({
+      where: {
+        publicProtocol: protocol,
+      },
+
+      select: {
+        id: true,
+        publicProtocol: true,
+
+        applicantData: {
+          select: {
+            cpfLookupHash: true,
+            birthDateEncrypted: true,
+          },
+        },
+      },
+    });
+
+  /*
+   * A função retorna exatamente o mesmo
+   * resultado para protocolo, CPF ou
+   * nascimento incorretos.
+   *
+   * A camada acima não deve informar
+   * qual dado específico falhou.
+   */
+  if (
+    !application ||
+    !application.publicProtocol ||
+    !application.applicantData
+  ) {
+    return {
+      success: false as const,
+    };
+  }
+
+  if (
+    application.applicantData
+      .cpfLookupHash !==
+    cpfLookupHash
+  ) {
+    return {
+      success: false as const,
+    };
+  }
+
+  const storedBirthDate =
+    decryptPii(
+      application.applicantData
+        .birthDateEncrypted,
+
+      `${application.id}:birthDate`,
+    );
+
+  if (
+    storedBirthDate !==
+    birthDate
+  ) {
+    return {
+      success: false as const,
+    };
+  }
+
+  /*
+   * As credenciais cadastrais foram
+   * validadas.
+   *
+   * Geramos um token completamente novo
+   * e substituímos o hash anterior.
+   *
+   * Portanto, a sessão pública antiga é
+   * invalidada.
+   */
+  const accessToken =
+    createApplicationToken();
+
+  const accessTokenHash =
+    hashApplicationToken(
+      accessToken,
+    );
+
+  await prisma.creditApplication.update({
+    where: {
+      id: application.id,
+    },
+
+    data: {
+      accessTokenHash,
+    },
+  });
+
+  return {
+    success: true as const,
+
+    protocol:
+      application.publicProtocol,
+
+    accessToken,
+  };
+}
+
