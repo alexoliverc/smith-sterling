@@ -1,3 +1,4 @@
+import { FinalCta } from '@/components/home/final-cta';
 import { Hero } from '@/components/home/hero';
 import { HowItWorks } from '@/components/home/how-it-works';
 import { Security } from '@/components/home/security';
@@ -15,6 +16,7 @@ export default function Home() {
         <TrustBar />
         <HowItWorks />
         <Security />
+        <FinalCta />
       </main>
 
       <Footer />
