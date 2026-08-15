@@ -43,3 +43,5 @@ coverage/
 /.agents/skills/
 /.claude/skills/
 /.windsurf/skills/
+
+/next-env.d.ts
