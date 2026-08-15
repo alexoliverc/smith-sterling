@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:integration": "vitest run --config vitest.integration.config.ts",
-    "prestart": "node --conditions=react-server --import=tsx scripts/validate-runtime-env.ts"
+    "prestart": "node --conditions=react-server --import=tsx scripts/validate-runtime-env.ts",
+    "prebuild": "prisma generate"
   },
   "keywords": [],
   "author": "",
@@ -47,5 +48,8 @@
     "tsx": "^4.23.12",
     "zod": "^4.4.3"
   },
-  "type": "module"
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  }
 }
