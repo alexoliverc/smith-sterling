@@ -101,6 +101,49 @@ export default async function AdminCreditOfferPage({
         'ACCEPTED',
     ) ?? null;
 
+  const hasPublishedOffers =
+    application.offers.length > 0;
+
+  let pageTitle =
+    'Criar e publicar proposta';
+
+  let pageDescription =
+    'Defina as condições financeiras que serão apresentadas ao cliente após a aprovação da análise de crédito.';
+
+  let sectionTitle =
+    'Condições da nova proposta';
+
+  let sectionDescription =
+    'A primeira proposta publicada será registrada como versão 1 e ficará disponível para decisão do cliente.';
+
+  if (hasPublishedOffers) {
+    pageTitle =
+      'Criar nova versão da proposta';
+
+    pageDescription =
+      'Revise as condições antes de publicar uma nova versão para decisão do cliente.';
+
+    sectionTitle =
+      'Condições da nova versão';
+
+    sectionDescription =
+      'Os campos abaixo criam uma nova versão. A versão apresentada anteriormente será encerrada conforme as regras da operação.';
+  }
+
+  if (acceptedOffer) {
+    pageTitle =
+      'Proposta aceita pelo cliente';
+
+    pageDescription =
+      'A proposta aceita encerrou a etapa de negociação desta operação.';
+
+    sectionTitle =
+      'Condições da proposta aceita';
+
+    sectionDescription =
+      'As condições da versão aceita estão fechadas e nenhuma nova versão pode ser publicada.';
+  }
+
   return (
     <main className="min-h-screen bg-slate-50">
       <header className="border-b border-white/10 bg-[#071522]">
@@ -153,11 +196,11 @@ export default async function AdminCreditOfferPage({
           </p>
 
           <h1 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[#071522] md:text-4xl">
-            Criar e publicar proposta
+            {pageTitle}
           </h1>
 
           <p className="mt-4 max-w-3xl leading-7 text-slate-600">
-            Defina as condições financeiras que serão apresentadas ao cliente após a aprovação da análise de crédito.
+            {pageDescription}
           </p>
 
           <p className="mt-3 font-mono text-sm text-slate-400">
@@ -169,11 +212,11 @@ export default async function AdminCreditOfferPage({
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
             <div>
               <h2 className="text-xl font-semibold text-[#071522]">
-                Condições da nova proposta
+                {sectionTitle}
               </h2>
 
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                A proposta publicada será registrada como uma nova versão e ficará disponível para a etapa de apresentação ao cliente.
+                {sectionDescription}
               </p>
             </div>
 

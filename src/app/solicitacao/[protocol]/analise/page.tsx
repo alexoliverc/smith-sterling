@@ -173,7 +173,7 @@ function Progress({ status }: { status: ApplicationStatus }) {
           id="application-progress-title"
           className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400"
         >
-          Andamento
+          Etapa de análise
         </p>
 
         <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5">
@@ -196,7 +196,7 @@ function Progress({ status }: { status: ApplicationStatus }) {
           id="application-progress-title"
           className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400"
         >
-          Andamento
+          Etapa de análise
         </p>
 
         <div
@@ -252,7 +252,7 @@ function Progress({ status }: { status: ApplicationStatus }) {
         id="application-progress-title"
         className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400"
       >
-        Andamento
+        Etapa de análise
       </p>
 
       <ol className="mt-5 grid gap-3 sm:grid-cols-3">

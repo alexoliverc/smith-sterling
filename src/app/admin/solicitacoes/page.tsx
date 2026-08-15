@@ -257,7 +257,7 @@ export default async function AdminApplicationsPage({
 
         <div className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <MetricCard
-            label="Total"
+            label="Total operacional"
             value={total}
           />
 

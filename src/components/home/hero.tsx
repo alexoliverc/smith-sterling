@@ -73,7 +73,7 @@ export function Hero() {
           <div className="mt-10 flex flex-col gap-4 sm:flex-row">
             <a
               href="#simulador"
-              className="rounded-xl bg-[#0b1f33] px-7 py-4 text-center text-base font-semibold text-white shadow-sm transition hover:bg-[#14324f]"
+              className="rounded-xl bg-[#0b1f33] px-7 py-4 text-center text-base font-semibold !text-white shadow-sm transition hover:bg-[#14324f]"
             >
               Simular meu crédito
             </a>

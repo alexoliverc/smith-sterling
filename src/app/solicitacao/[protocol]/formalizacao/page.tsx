@@ -110,10 +110,12 @@ export default async function FormalizationPage({ params }: FormalizationPagePro
           </div>
 
           <div className="px-6 py-8 md:px-10 md:py-10">
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <SummaryCard label="Protocolo" value={protocol} mono />
 
               <SummaryCard label="Valor contratado" value={offer ? formatCurrency(offer.principalCents / 100) : 'Não disponível no registro histórico'} />
+
+              <SummaryCard label="Valor líquido a liberar" value={offer ? formatCurrency(offer.netDisbursementCents / 100) : 'Não disponível no registro histórico'} />
 
               <SummaryCard label="Parcelas" value={offer ? `${offer.installmentCount} × ${formatCurrency(offer.installmentCents / 100)}` : '—'} />
             </div>

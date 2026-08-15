@@ -140,25 +140,64 @@ export default async function AdminFormalizationPage({ params }: AdminFormalizat
 
             <Card title="Conta para recebimento">
               {formalization.bankData ? (
-                <div className="grid gap-x-8 gap-y-7 md:grid-cols-2">
-                  <Detail label="Banco" value={formalization.bankData.bankName} />
+                <>
+                  <div className="grid gap-x-8 gap-y-7 md:grid-cols-2">
+                    <Detail label="Banco" value={formalization.bankData.bankName} />
 
-                  <Detail
-                    label="Tipo da conta"
-                    value={formatAccountType(formalization.bankData.accountType)}
-                  />
+                    <Detail
+                      label="Tipo da conta"
+                      value={formatAccountType(formalization.bankData.accountType)}
+                    />
 
-                  <Detail label="Agência" value={formalization.bankData.branch} />
+                    <Detail
+                      label="Agência"
+                      value={maskFinancialValue(formalization.bankData.branch)}
+                    />
 
-                  <Detail label="Conta" value={formalization.bankData.account} />
+                    <Detail
+                      label="Conta"
+                      value={maskFinancialValue(formalization.bankData.account)}
+                    />
 
-                  <Detail label="Titular" value={formalization.bankData.holderName} />
+                    <Detail label="Titular" value={formalization.bankData.holderName} />
 
-                  <Detail
-                    label="Chave Pix"
-                    value={formalization.bankData.pixKey || 'Não informada'}
-                  />
-                </div>
+                    <Detail
+                      label="Chave Pix"
+                      value={
+                        formalization.bankData.pixKey
+                          ? maskFinancialValue(formalization.bankData.pixKey)
+                          : 'Não informada'
+                      }
+                    />
+                  </div>
+
+                  <details className="mt-7 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+                    <summary className="cursor-pointer text-sm font-semibold text-amber-900">
+                      Mostrar dados completos para conferência
+                    </summary>
+
+                    <div className="mt-5 grid gap-x-8 gap-y-7 border-t border-amber-200 pt-5 md:grid-cols-2">
+                      <Detail
+                        label="Agência completa"
+                        value={formalization.bankData.branch}
+                      />
+
+                      <Detail
+                        label="Conta completa"
+                        value={formalization.bankData.account}
+                      />
+
+                      <Detail
+                        label="Chave Pix completa"
+                        value={formalization.bankData.pixKey || 'Não informada'}
+                      />
+                    </div>
+
+                    <p className="mt-5 text-xs leading-5 text-amber-800">
+                      Revele estes dados somente durante a conferência ou execução da operação.
+                    </p>
+                  </details>
+                </>
               ) : (
                 <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
                   <p className="font-semibold text-amber-900">
@@ -405,6 +444,36 @@ function formatFormalizationStatus(status: FormalizationStatus) {
   };
 
   return labels[status];
+}
+
+function maskFinancialValue(
+  value: string,
+) {
+  const normalized =
+    value.trim();
+
+  if (!normalized) {
+    return 'Não informada';
+  }
+
+  const visibleCount =
+    normalized.length <= 4
+      ? 2
+      : 4;
+
+  const visible =
+    normalized.slice(
+      -visibleCount,
+    );
+
+  const hiddenLength =
+    Math.max(
+      4,
+      normalized.length -
+        visibleCount,
+    );
+
+  return '•'.repeat(hiddenLength) + visible;
 }
 
 function formatAccountType(value: string) {
