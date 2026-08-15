@@ -69,6 +69,11 @@ export default async function AdminFormalizationPage({ params }: AdminFormalizat
 
   const formalization = application.formalization;
 
+  const isHistoricalWithoutOffer =
+    formalization.acceptedOfferId === null &&
+    (formalization.status === 'DISBURSED' ||
+      formalization.status === 'CANCELLED');
+
   const protocolLabel = application.publicProtocol ?? protocol;
 
   return (
@@ -252,7 +257,7 @@ export default async function AdminFormalizationPage({ params }: AdminFormalizat
 
           <aside>
             <Card title="Ações da formalização">
-              {!application.acceptedOffer ? (
+              {!application.acceptedOffer && !isHistoricalWithoutOffer ? (
                 <StatusMessage>
                   A operação administrativa está bloqueada porque a proposta aceita vinculada à formalização não foi localizada.
                 </StatusMessage>

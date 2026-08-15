@@ -99,27 +99,22 @@ async function assertAcceptedOfferForFormalization(
   tx: Pick<typeof prisma, 'creditOffer'>,
   formalization: FormalizationOfferContext,
 ) {
+  if (!formalization.acceptedOfferId) {
+    throw new FormalizationOfferNotAcceptedError();
+  }
+
   const acceptedOffer =
     await tx.creditOffer.findFirst({
-      where:
-        formalization.acceptedOfferId
-          ? {
-              id:
-                formalization.acceptedOfferId,
+      where: {
+        id:
+          formalization.acceptedOfferId,
 
-              applicationId:
-                formalization.applicationId,
+        applicationId:
+          formalization.applicationId,
 
-              status:
-                'ACCEPTED',
-            }
-          : {
-              applicationId:
-                formalization.applicationId,
-
-              status:
-                'ACCEPTED',
-            },
+        status:
+          'ACCEPTED',
+      },
 
       select: {
         id: true,

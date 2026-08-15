@@ -55,16 +55,13 @@ describe('formalization-status workflow', () => {
   });
 
   describe('invariante de proposta aceita', () => {
-    it('bloqueia envio de dados bancários sem proposta aceita', async () => {
+    it('bloqueia envio de dados bancários sem proposta vinculada', async () => {
       mocks.tx.creditFormalization.findUnique.mockResolvedValue({
         id: 'formalization-1',
         applicationId: 'application-1',
+        acceptedOfferId: null,
         status: 'PENDING',
       });
-
-      mocks.tx.creditOffer.findFirst.mockResolvedValue(
-        null,
-      );
 
       await expect(
         submitFormalizationBankData(
@@ -77,16 +74,7 @@ describe('formalization-status workflow', () => {
 
       expect(
         mocks.tx.creditOffer.findFirst,
-      ).toHaveBeenCalledWith({
-        where: {
-          applicationId: 'application-1',
-          status: 'ACCEPTED',
-        },
-
-        select: {
-          id: true,
-        },
-      });
+      ).not.toHaveBeenCalled();
 
       expect(
         mocks.tx.creditFormalization.updateMany,
@@ -203,54 +191,36 @@ describe('formalization-status workflow', () => {
 
   describe('compatibilidade com registros legados', () => {
 
-    it('usa fallback por solicitação quando acceptedOfferId legado é nulo', async () => {
+    it('bloqueia operação quando acceptedOfferId legado é nulo', async () => {
       mocks.tx.creditFormalization.findUnique
         .mockResolvedValueOnce({
           id: 'formalization-legacy',
           applicationId: 'application-1',
           acceptedOfferId: null,
           status: 'PENDING',
-        })
-        .mockResolvedValueOnce({
-          id: 'formalization-legacy',
-          status: 'BANK_DETAILS_SUBMITTED',
-          bankDataSubmittedAt: new Date(),
-          updatedAt: new Date(),
         });
 
-      mocks.tx.creditOffer.findFirst.mockResolvedValue({
-        id: 'accepted-offer-legacy',
+      await expect(
+        submitFormalizationBankData(
+          'formalization-legacy',
+          'encrypted-bank-data',
+        ),
+      ).rejects.toMatchObject({
+        name:
+          'FormalizationOfferNotAcceptedError',
       });
-
-      mocks.tx.creditFormalization.updateMany.mockResolvedValue({
-        count: 1,
-      });
-
-      mocks.tx.formalizationStatusHistory.create.mockResolvedValue({
-        id: 'history-legacy',
-      });
-
-      await submitFormalizationBankData(
-        'formalization-legacy',
-        'encrypted-bank-data',
-      );
 
       expect(
         mocks.tx.creditOffer.findFirst,
-      ).toHaveBeenCalledWith({
-        where: {
-          applicationId: 'application-1',
-          status: 'ACCEPTED',
-        },
-
-        select: {
-          id: true,
-        },
-      });
+      ).not.toHaveBeenCalled();
 
       expect(
         mocks.tx.creditFormalization.updateMany,
-      ).toHaveBeenCalled();
+      ).not.toHaveBeenCalled();
+
+      expect(
+        mocks.tx.formalizationStatusHistory.create,
+      ).not.toHaveBeenCalled();
     });
 
     it('permite cancelamento mesmo sem proposta aceita', async () => {

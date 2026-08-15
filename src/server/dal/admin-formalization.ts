@@ -32,32 +32,6 @@ export async function getAdminFormalizationByProtocol(
         publicProtocol: true,
         status: true,
 
-        /*
-         * Compatibilidade temporária com
-         * formalizações anteriores à criação
-         * de acceptedOfferId.
-         *
-         * Para registros novos, a relação
-         * formalization.acceptedOffer abaixo
-         * é a fonte autoritativa.
-         */
-        offers: {
-          where: {
-            status:
-              'ACCEPTED',
-          },
-
-          orderBy: {
-            acceptedAt:
-              'desc',
-          },
-
-          take: 1,
-
-          select:
-            acceptedOfferSelect,
-        },
-
         formalization: {
           select: {
             id: true,
@@ -140,23 +114,19 @@ export async function getAdminFormalizationByProtocol(
     application.formalization;
 
   /*
-   * Se acceptedOfferId estiver preenchido,
-   * nenhuma outra proposta ACCEPTED pode
-   * substituir silenciosamente a relação.
+   * A relação formalization.acceptedOffer é a
+   * única fonte autoritativa da proposta.
    *
-   * O fallback por application.offers existe
-   * somente para registros legados cujo
-   * acceptedOfferId ainda seja NULL.
+   * Se acceptedOfferId estiver ausente ou a
+   * relação não estiver ACCEPTED, nenhuma
+   * outra proposta da solicitação é usada.
    */
   const acceptedOffer =
-    formalization.acceptedOfferId
+    formalization.acceptedOfferId &&
+    formalization.acceptedOffer
+      ?.status === 'ACCEPTED'
       ? formalization.acceptedOffer
-            ?.status ===
-          'ACCEPTED'
-        ? formalization.acceptedOffer
-        : null
-      : application.offers[0] ??
-        null;
+      : null;
 
   const operatorIds = [
     ...new Set(

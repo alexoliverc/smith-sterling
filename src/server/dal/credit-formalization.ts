@@ -65,58 +65,6 @@ export async function getFormalizationForSession(
       select: {
         id: true,
 
-        /*
-         * Compatibilidade temporária com
-         * formalizações anteriores à criação
-         * de acceptedOfferId.
-         *
-         * Para registros novos, a relação
-         * formalization.acceptedOffer abaixo
-         * é sempre a fonte autoritativa.
-         */
-        offers: {
-          where: {
-            status:
-              'ACCEPTED',
-          },
-
-          orderBy: {
-            acceptedAt:
-              'desc',
-          },
-
-          take: 1,
-
-          select: {
-            id: true,
-            version: true,
-            status: true,
-
-            principalCents:
-              true,
-
-            netDisbursementCents:
-              true,
-
-            installmentCents:
-              true,
-
-            totalRepaymentCents:
-              true,
-
-            months: true,
-
-            installmentCount:
-              true,
-
-            acceptedAt:
-              true,
-
-            termsVersion:
-              true,
-          },
-        },
-
         formalization: {
           select: {
             status: true,
@@ -196,27 +144,35 @@ export async function getFormalizationForSession(
   }
 
   /*
-   * Quando acceptedOfferId existe, não
-   * fazemos fallback para outra proposta.
+   * A proposta vinculada diretamente à
+   * formalização é a única fonte autoritativa.
    *
-   * Isso impede que uma inconsistência
-   * relacional seja mascarada escolhendo
-   * simplesmente outra oferta ACCEPTED.
+   * Formalizações terminais anteriores à
+   * introdução de acceptedOfferId podem ser
+   * consultadas como registros históricos,
+   * mas nenhuma proposta substituta é inferida.
    */
   const acceptedOffer =
     application.formalization
-      .acceptedOfferId
+      .acceptedOfferId &&
+    application.formalization
+      .acceptedOffer
+      ?.status === 'ACCEPTED'
       ? application.formalization
-            .acceptedOffer
-          ?.status ===
-        'ACCEPTED'
-        ? application.formalization
-            .acceptedOffer
-        : null
-      : application.offers[0] ??
-        null;
+          .acceptedOffer
+      : null;
 
-  if (!acceptedOffer) {
+  const isHistoricalWithoutOffer =
+    application.formalization
+      .acceptedOfferId === null &&
+    (
+      application.formalization
+        .status === 'DISBURSED' ||
+      application.formalization
+        .status === 'CANCELLED'
+    );
+
+  if (!acceptedOffer && !isHistoricalWithoutOffer) {
     return {
       allowed: false as const,
 
@@ -292,29 +248,6 @@ export async function saveBankDataForSession(
       select: {
         id: true,
 
-        /*
-         * Fallback somente para registros
-         * legados ainda sem acceptedOfferId.
-         */
-        offers: {
-          where: {
-            status:
-              'ACCEPTED',
-          },
-
-          orderBy: {
-            acceptedAt:
-              'desc',
-          },
-
-          take: 1,
-
-          select: {
-            id: true,
-            version: true,
-          },
-        },
-
         formalization: {
           select: {
             id: true,
@@ -354,13 +287,15 @@ export async function saveBankDataForSession(
 
   const acceptedOfferExists =
     application.formalization
-      .acceptedOfferId
-      ? application.formalization
-            .acceptedOffer
-          ?.status ===
-        'ACCEPTED'
-      : application.offers.length >
-        0;
+      .acceptedOfferId !== null &&
+    application.formalization
+      .acceptedOffer
+      ?.id ===
+      application.formalization
+        .acceptedOfferId &&
+    application.formalization
+      .acceptedOffer
+      .status === 'ACCEPTED';
 
   if (!acceptedOfferExists) {
     return {

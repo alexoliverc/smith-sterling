@@ -39,6 +39,8 @@ export default async function FormalizationPage({ params }: FormalizationPagePro
 
   const { formalization, offer } = result;
 
+  const isHistoricalWithoutOffer = offer === null;
+
   const bankDataReceived =
     formalization.status === 'BANK_DETAILS_SUBMITTED' ||
     formalization.status === 'READY_FOR_DISBURSEMENT' ||
@@ -81,7 +83,7 @@ export default async function FormalizationPage({ params }: FormalizationPagePro
             <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
               <div className="max-w-2xl">
                 <div className="inline-flex rounded-full bg-white/80 px-3 py-1.5 text-xs font-semibold text-emerald-700">
-                  Crédito aprovado
+                  {isHistoricalWithoutOffer ? 'Registro histórico' : 'Crédito aprovado'}
                 </div>
 
                 <h1 className="mt-5 text-3xl font-semibold tracking-[-0.035em] text-[#071522] md:text-4xl">
@@ -89,8 +91,9 @@ export default async function FormalizationPage({ params }: FormalizationPagePro
                 </h1>
 
                 <p className="mt-4 leading-7 text-slate-600">
-                  Sua proposta foi aceita. Agora estamos preparando as informações necessárias
-                  para concluir a formalização e seguir para as etapas de liberação.
+                  {isHistoricalWithoutOffer
+                    ? 'Este é um registro histórico de uma formalização anterior ao vínculo obrigatório entre a formalização e uma proposta de crédito.'
+                    : 'Sua proposta foi aceita. Agora estamos preparando as informações necessárias para concluir a formalização e seguir para as etapas de liberação.'}
                 </p>
               </div>
 
@@ -110,9 +113,9 @@ export default async function FormalizationPage({ params }: FormalizationPagePro
             <div className="grid gap-4 sm:grid-cols-3">
               <SummaryCard label="Protocolo" value={protocol} mono />
 
-              <SummaryCard label="Valor contratado" value={formatCurrency(offer.principalCents / 100)} />
+              <SummaryCard label="Valor contratado" value={offer ? formatCurrency(offer.principalCents / 100) : 'Não disponível no registro histórico'} />
 
-              <SummaryCard label="Parcelas" value={`${offer.installmentCount} × ${formatCurrency(offer.installmentCents / 100)}`} />
+              <SummaryCard label="Parcelas" value={offer ? `${offer.installmentCount} × ${formatCurrency(offer.installmentCents / 100)}` : '—'} />
             </div>
 
             <div className="mt-10">

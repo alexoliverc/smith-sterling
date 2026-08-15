@@ -70,6 +70,7 @@ describe('formalization-status - caminho positivo', () => {
       .mockResolvedValueOnce({
         id: 'formalization-1',
         applicationId: 'application-1',
+        acceptedOfferId: 'accepted-offer-1',
         status: 'PENDING',
       })
       .mockResolvedValueOnce({
@@ -88,6 +89,7 @@ describe('formalization-status - caminho positivo', () => {
       mocks.tx.creditOffer.findFirst,
     ).toHaveBeenCalledWith({
       where: {
+        id: 'accepted-offer-1',
         applicationId: 'application-1',
         status: 'ACCEPTED',
       },
@@ -131,6 +133,7 @@ describe('formalization-status - caminho positivo', () => {
       .mockResolvedValueOnce({
         id: 'formalization-1',
         applicationId: 'application-1',
+        acceptedOfferId: 'accepted-offer-1',
         status: 'BANK_DETAILS_SUBMITTED',
       })
       .mockResolvedValueOnce({
@@ -186,6 +189,7 @@ describe('formalization-status - caminho positivo', () => {
       .mockResolvedValueOnce({
         id: 'formalization-1',
         applicationId: 'application-1',
+        acceptedOfferId: 'accepted-offer-1',
         status: 'READY_FOR_DISBURSEMENT',
       })
       .mockResolvedValueOnce({
@@ -240,7 +244,7 @@ describe('formalization-status - caminho positivo', () => {
       .mockResolvedValueOnce({
         id: 'formalization-1',
         applicationId: 'application-1',
-        acceptedOfferId: null,
+        acceptedOfferId: 'accepted-offer-1',
         status: 'BANK_DETAILS_SUBMITTED',
       })
       .mockResolvedValueOnce({
@@ -259,6 +263,7 @@ describe('formalization-status - caminho positivo', () => {
       mocks.tx.creditOffer.findFirst,
     ).toHaveBeenCalledWith({
       where: {
+        id: 'accepted-offer-1',
         applicationId: 'application-1',
         status: 'ACCEPTED',
       },

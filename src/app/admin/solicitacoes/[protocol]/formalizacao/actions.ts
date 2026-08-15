@@ -416,7 +416,7 @@ function hasInvalidAcceptedOfferBinding(
   },
 ) {
   return (
-    formalization.acceptedOfferId !== null &&
+    formalization.acceptedOfferId === null ||
     formalization.acceptedOffer?.status !== 'ACCEPTED'
   );
 }

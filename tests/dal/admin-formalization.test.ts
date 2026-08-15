@@ -270,18 +270,8 @@ describe(
     );
 
     it(
-      'mantém fallback temporário para formalização legada com acceptedOfferId nulo',
+      'preserva formalização histórica sem inventar proposta aceita',
       async () => {
-        const legacyAcceptedOffer = {
-          ...acceptedOffer,
-
-          id:
-            'offer-legacy',
-
-          version:
-            3,
-        };
-
         mocks.creditApplicationFindUnique.mockResolvedValue({
           id:
             'application-1',
@@ -292,17 +282,21 @@ describe(
           status:
             'APPROVED',
 
-          offers: [
-            legacyAcceptedOffer,
-          ],
-
           formalization:
             createFormalization({
+              status:
+                'DISBURSED',
+
               acceptedOfferId:
                 null,
 
               acceptedOffer:
                 null,
+
+              disbursedAt:
+                new Date(
+                  '2026-08-15T09:10:00.000Z',
+                ),
             }),
         });
 
@@ -313,15 +307,7 @@ describe(
 
         expect(
           result?.acceptedOffer,
-        ).toEqual(
-          expect.objectContaining({
-            id:
-              'offer-legacy',
-
-            status:
-              'ACCEPTED',
-          }),
-        );
+        ).toBeNull();
 
         expect(
           result?.formalization,
@@ -329,8 +315,19 @@ describe(
           expect.objectContaining({
             acceptedOfferId:
               null,
+
+            status:
+              'DISBURSED',
           }),
         );
+
+        const query =
+          mocks.creditApplicationFindUnique.mock
+            .calls[0][0];
+
+        expect(
+          query.select.offers,
+        ).toBeUndefined();
       },
     );
 

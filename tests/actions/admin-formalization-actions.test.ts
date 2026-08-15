@@ -260,7 +260,7 @@ describe(
     );
 
     it(
-      'mantém compatibilidade temporária para formalização legada sem acceptedOfferId',
+      'bloqueia formalização administrativa sem acceptedOfferId',
       async () => {
         mocks.findAdminFormalizationForTransition.mockResolvedValue({
           id:
@@ -287,40 +287,23 @@ describe(
           },
         });
 
-        mocks.transitionFormalizationStatus.mockResolvedValue({
-          id:
-            'formalization-legacy',
-
-          status:
-            'READY_FOR_DISBURSEMENT',
-        });
-
-        await expect(
-          confirmFormalizationReady(
+        const result =
+          await confirmFormalizationReady(
             'SS-TESTE',
             {},
             new FormData(),
-          ),
-        ).rejects.toThrow(
-          'REDIRECT:/admin/solicitacoes/SS-TESTE/formalizacao',
-        );
+          );
+
+        expect(
+          result,
+        ).toEqual({
+          error:
+            'A operação não pode avançar porque a proposta vinculada à formalização não está aceita pelo cliente.',
+        });
 
         expect(
           mocks.transitionFormalizationStatus,
-        ).toHaveBeenCalledWith(
-          'formalization-legacy',
-          'READY_FOR_DISBURSEMENT',
-          {
-            actorType:
-              'OPERATOR',
-
-            actorId:
-              'admin-1',
-
-            reason:
-              'Dados bancários conferidos e operação preparada para liberação.',
-          },
-        );
+        ).not.toHaveBeenCalled();
       },
     );
   },

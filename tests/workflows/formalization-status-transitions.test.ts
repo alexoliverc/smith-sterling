@@ -63,6 +63,7 @@ describe('formalization-status - transições e concorrência', () => {
     mocks.tx.creditFormalization.findUnique.mockResolvedValue({
       id: 'formalization-1',
       applicationId: 'application-1',
+      acceptedOfferId: 'offer-accepted-1',
       status: 'PENDING',
     });
 
@@ -88,6 +89,7 @@ describe('formalization-status - transições e concorrência', () => {
     mocks.tx.creditFormalization.findUnique.mockResolvedValue({
       id: 'formalization-1',
       applicationId: 'application-1',
+      acceptedOfferId: 'offer-accepted-1',
       status: 'BANK_DETAILS_SUBMITTED',
     });
 
@@ -113,6 +115,7 @@ describe('formalization-status - transições e concorrência', () => {
     mocks.tx.creditFormalization.findUnique.mockResolvedValue({
       id: 'formalization-1',
       applicationId: 'application-1',
+      acceptedOfferId: 'offer-accepted-1',
       status: 'BANK_DETAILS_SUBMITTED',
     });
 
@@ -143,6 +146,7 @@ describe('formalization-status - transições e concorrência', () => {
     mocks.tx.creditFormalization.findUnique.mockResolvedValue({
       id: 'formalization-1',
       applicationId: 'application-1',
+      acceptedOfferId: 'offer-accepted-1',
       status: 'PENDING',
     });
 
