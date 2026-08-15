@@ -9,6 +9,10 @@ import {
 
 const mocks = vi.hoisted(() => {
   const tx = {
+    creditApplication: {
+      update: vi.fn(),
+    },
+
     creditOffer: {
       findUnique: vi.fn(),
       updateMany: vi.fn(),
@@ -328,4 +332,72 @@ describe('public-credit-offer - casos adversos', () => {
       mocks.tx.creditFormalization.upsert,
     ).not.toHaveBeenCalled();
   });
+
+  it('adquire o lock da solicitação antes de ler a proposta para decisão', async () => {
+    mocks.tx.creditApplication.update.mockResolvedValue({
+      id: 'application-1',
+    });
+
+    mocks.tx.creditOffer.findUnique.mockResolvedValue({
+      id: 'offer-1',
+      applicationId: 'application-1',
+      version: 1,
+      status: 'PRESENTED',
+      expiresAt:
+        new Date(
+          '2026-08-20T15:00:00.000Z',
+        ),
+    });
+
+    mocks.tx.creditFormalization.findUnique.mockResolvedValue(
+      null,
+    );
+
+    mocks.tx.creditOffer.updateMany.mockResolvedValue({
+      count: 1,
+    });
+
+    mocks.tx.creditOfferStatusHistory.create.mockResolvedValue({
+      id: 'history-1',
+    });
+
+    mocks.tx.creditFormalization.upsert.mockResolvedValue({
+      id: 'formalization-1',
+      status: 'PENDING',
+    });
+
+    await decidePublicCreditOffer({
+      applicationId:
+        'application-1',
+
+      version:
+        1,
+
+      decision:
+        'ACCEPT',
+    });
+
+    expect(
+      mocks.tx.creditApplication.update,
+    ).toHaveBeenCalledTimes(1);
+
+    expect(
+      mocks.tx.creditOffer.findUnique,
+    ).toHaveBeenCalledTimes(1);
+
+    const lockCallOrder =
+      mocks.tx.creditApplication.update
+        .mock.invocationCallOrder[0];
+
+    const offerReadCallOrder =
+      mocks.tx.creditOffer.findUnique
+        .mock.invocationCallOrder[0];
+
+    expect(
+      lockCallOrder,
+    ).toBeLessThan(
+      offerReadCallOrder,
+    );
+  });
+
 });

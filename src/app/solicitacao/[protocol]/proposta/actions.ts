@@ -72,8 +72,8 @@ export async function decideOffer(
    *
    * O formulário público terá uma caixa:
    *
-   * "Li e concordo com as condições
-   * apresentadas nesta proposta."
+   * "Li as condições apresentadas
+   * nesta proposta e desejo aceitá-la."
    */
   if (
     parsed.data.decision ===
@@ -84,7 +84,7 @@ export async function decideOffer(
   ) {
     return {
       error:
-        'Confirme que leu e concorda com as condições da proposta antes de continuar.',
+        'Confirme que leu as condições da proposta e deseja aceitá-la antes de continuar.',
     };
   }
 

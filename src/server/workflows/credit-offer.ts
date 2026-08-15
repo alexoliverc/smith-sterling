@@ -85,6 +85,183 @@ export class CreditOfferDisclosureIncompleteError extends Error {
   }
 }
 
+const MAX_STORED_INT =
+  2_147_483_647;
+
+const PERCENTAGE_PATTERN =
+  /^\d{1,4}(\.\d{1,8})?$/;
+
+export class CreditOfferFinancialIntegrityError extends Error {
+  constructor(message: string) {
+    super(message);
+
+    this.name =
+      'CreditOfferFinancialIntegrityError';
+  }
+}
+
+function isPositiveStoredInteger(
+  value: number,
+) {
+  return (
+    Number.isInteger(value) &&
+    value > 0 &&
+    value <= MAX_STORED_INT
+  );
+}
+
+function isNonNegativeStoredInteger(
+  value: number,
+) {
+  return (
+    Number.isInteger(value) &&
+    value >= 0 &&
+    value <= MAX_STORED_INT
+  );
+}
+
+function hasValidPercentageFormat(
+  value: string,
+) {
+  return PERCENTAGE_PATTERN.test(
+    value,
+  );
+}
+
+function validateCreditOfferFinancialIntegrity(
+  input: PublishCreditOfferInput,
+  now: Date,
+) {
+  const principalValues = [
+    input.principalCents,
+    input.netDisbursementCents,
+    input.installmentCents,
+    input.totalRepaymentCents,
+  ];
+
+  if (
+    !principalValues.every(
+      isPositiveStoredInteger,
+    )
+  ) {
+    throw new CreditOfferFinancialIntegrityError(
+      'Os valores principais da proposta devem ser inteiros em centavos, maiores que zero e compatíveis com o armazenamento.',
+    );
+  }
+
+  if (
+    !isNonNegativeStoredInteger(
+      input.iofCents,
+    ) ||
+    !isNonNegativeStoredInteger(
+      input.otherFeesCents,
+    )
+  ) {
+    throw new CreditOfferFinancialIntegrityError(
+      'IOF e outros encargos devem ser valores não negativos e compatíveis com o armazenamento.',
+    );
+  }
+
+  /*
+   * Nesta camada, principal, valor líquido, IOF e outros
+   * encargos são componentes independentes da proposta.
+   *
+   * O workflow não presume como IOF ou encargos são
+   * financiados ou descontados do desembolso. Essa relação
+   * depende da estrutura financeira efetivamente contratada
+   * e deve permanecer coerente com o CET e suas divulgações.
+   *
+   * A invariante técnica aqui é apenas que o valor líquido
+   * não ultrapasse o principal informado.
+   */
+  if (
+    input.netDisbursementCents >
+    input.principalCents
+  ) {
+    throw new CreditOfferFinancialIntegrityError(
+      'O valor líquido a liberar não pode ser superior ao valor principal aprovado.',
+    );
+  }
+
+  if (
+    input.totalRepaymentCents <
+    input.netDisbursementCents
+  ) {
+    throw new CreditOfferFinancialIntegrityError(
+      'O total da operação não pode ser inferior ao valor líquido liberado.',
+    );
+  }
+
+  if (
+    !Number.isInteger(
+      input.months,
+    ) ||
+    input.months < 1 ||
+    input.months > 120 ||
+    !Number.isInteger(
+      input.installmentCount,
+    ) ||
+    input.installmentCount < 1 ||
+    input.installmentCount > 120
+  ) {
+    throw new CreditOfferFinancialIntegrityError(
+      'Prazo e número de parcelas devem ser inteiros entre 1 e 120.',
+    );
+  }
+
+  const calculatedTotal =
+    input.installmentCents *
+    input.installmentCount;
+
+  if (
+    calculatedTotal !==
+    input.totalRepaymentCents
+  ) {
+    throw new CreditOfferFinancialIntegrityError(
+      'O total da operação deve corresponder ao valor da parcela multiplicado pelo número de parcelas.',
+    );
+  }
+
+  const percentages = [
+    input.monthlyRatePercent,
+    input.annualRatePercent,
+    input.cetAnnualPercent,
+    input.lateInterestMonthlyPercent,
+    input.latePenaltyPercent,
+  ];
+
+  if (
+    !percentages.every(
+      hasValidPercentageFormat,
+    )
+  ) {
+    throw new CreditOfferFinancialIntegrityError(
+      'As taxas e percentuais da proposta possuem formato inválido.',
+    );
+  }
+
+  if (
+    Number.isNaN(
+      input.firstDueDate.getTime(),
+    ) ||
+    Number.isNaN(
+      input.expiresAt.getTime(),
+    )
+  ) {
+    throw new CreditOfferFinancialIntegrityError(
+      'As datas da proposta são inválidas.',
+    );
+  }
+
+  if (
+    input.firstDueDate <= now
+  ) {
+    throw new CreditOfferFinancialIntegrityError(
+      'O primeiro vencimento precisa ocorrer no futuro.',
+    );
+  }
+}
+
 export async function publishCreditOffer(
   applicationId: string,
   input: PublishCreditOfferInput,
@@ -92,6 +269,11 @@ export async function publishCreditOffer(
 ) {
   return prisma.$transaction(async (tx) => {
     const now = new Date();
+
+    validateCreditOfferFinancialIntegrity(
+      input,
+      now,
+    );
 
     const lateInterest =
       Number(

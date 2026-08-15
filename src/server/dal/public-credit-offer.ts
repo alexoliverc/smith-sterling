@@ -62,6 +62,18 @@ export async function getPublicCreditOfferForSession(
         publicProtocol: true,
 
         offers: {
+          where: {
+            status: {
+              in: [
+                'PRESENTED',
+                'ACCEPTED',
+                'DECLINED',
+                'EXPIRED',
+                'CANCELLED',
+              ],
+            },
+          },
+
           orderBy: {
             version: 'desc',
           },

@@ -9,6 +9,10 @@ import {
 
 const mocks = vi.hoisted(() => {
   const tx = {
+    creditApplication: {
+      update: vi.fn(),
+    },
+
     creditOffer: {
       findUnique: vi.fn(),
       updateMany: vi.fn(),

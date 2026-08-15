@@ -16,9 +16,13 @@ import {
   CreditOfferAlreadyAcceptedError,
   CreditOfferDisclosureIncompleteError,
   CreditOfferApplicationNotApprovedError,
+  CreditOfferFinancialIntegrityError,
   CreditOfferExpirationTooShortError,
   publishCreditOffer,
 } from '@/server/workflows/credit-offer';
+
+const MAX_STORED_INT =
+  2_147_483_647;
 
 const protocolSchema =
   z.string().trim().min(4).max(24);
@@ -349,6 +353,29 @@ export async function publishOffer(
       parsed.data.otherFees,
     );
 
+  const monetaryValues = [
+    principalCents,
+    netDisbursementCents,
+    installmentCents,
+    totalRepaymentCents,
+    iofCents,
+    otherFeesCents,
+  ];
+
+  if (
+    monetaryValues.some(
+      (value) =>
+        !Number.isInteger(value) ||
+        value < 0 ||
+        value > MAX_STORED_INT,
+    )
+  ) {
+    return {
+      error:
+        'Um dos valores monetários informados ultrapassa o limite permitido.',
+    };
+  }
+
   if (
     principalCents <= 0 ||
     netDisbursementCents <= 0 ||
@@ -551,7 +578,9 @@ export async function publishOffer(
       error instanceof
         CreditOfferExpirationTooShortError ||
       error instanceof
-        CreditOfferDisclosureIncompleteError
+        CreditOfferDisclosureIncompleteError ||
+      error instanceof
+        CreditOfferFinancialIntegrityError
     ) {
       return {
         error:

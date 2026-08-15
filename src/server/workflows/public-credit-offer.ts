@@ -52,6 +52,34 @@ export async function decidePublicCreditOffer(
     async (tx) => {
       const now = new Date();
 
+      /*
+       * Serializa a decisão do cliente com
+       * a publicação de novas versões.
+       *
+       * publishCreditOffer usa a mesma linha
+       * de CreditApplication como ponto de
+       * serialização dentro da transação.
+       *
+       * Assim, publicação e decisão não podem
+       * alterar simultaneamente versões da
+       * mesma solicitação.
+       */
+      await tx.creditApplication.update({
+        where: {
+          id:
+            input.applicationId,
+        },
+
+        data: {
+          updatedAt:
+            now,
+        },
+
+        select: {
+          id: true,
+        },
+      });
+
       const offer =
         await tx.creditOffer.findUnique({
           where: {
