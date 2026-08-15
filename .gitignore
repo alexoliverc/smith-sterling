@@ -40,3 +40,6 @@ tmp/
 coverage/
 
 /src/generated/prisma
+/.agents/skills/
+/.claude/skills/
+/.windsurf/skills/
