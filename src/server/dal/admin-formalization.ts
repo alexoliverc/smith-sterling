@@ -3,53 +3,115 @@ import 'server-only';
 import { prisma } from '@/lib/prisma';
 import { decryptPii } from '@/lib/security/pii';
 
-export async function getAdminFormalizationByProtocol(protocol: string) {
-  const application = await prisma.creditApplication.findUnique({
-    where: {
-      publicProtocol: protocol,
-    },
+const acceptedOfferSelect = {
+  id: true,
+  version: true,
+  status: true,
+  principalCents: true,
+  netDisbursementCents: true,
+  installmentCents: true,
+  totalRepaymentCents: true,
+  months: true,
+  installmentCount: true,
+  acceptedAt: true,
+  termsVersion: true,
+} as const;
 
-    select: {
-      id: true,
-      publicProtocol: true,
-      status: true,
-      amount: true,
-      months: true,
+export async function getAdminFormalizationByProtocol(
+  protocol: string,
+) {
+  const application =
+    await prisma.creditApplication.findUnique({
+      where: {
+        publicProtocol:
+          protocol,
+      },
 
-      formalization: {
-        select: {
-          id: true,
-          status: true,
+      select: {
+        id: true,
+        publicProtocol: true,
+        status: true,
 
-          bankDataEncrypted: true,
-          bankDataSubmittedAt: true,
+        /*
+         * Compatibilidade temporária com
+         * formalizações anteriores à criação
+         * de acceptedOfferId.
+         *
+         * Para registros novos, a relação
+         * formalization.acceptedOffer abaixo
+         * é a fonte autoritativa.
+         */
+        offers: {
+          where: {
+            status:
+              'ACCEPTED',
+          },
 
-          readyAt: true,
-          disbursedAt: true,
-          cancelledAt: true,
+          orderBy: {
+            acceptedAt:
+              'desc',
+          },
 
-          createdAt: true,
-          updatedAt: true,
+          take: 1,
 
-          statusHistory: {
-            orderBy: {
-              createdAt: 'asc',
+          select:
+            acceptedOfferSelect,
+        },
+
+        formalization: {
+          select: {
+            id: true,
+            status: true,
+
+            acceptedOfferId:
+              true,
+
+            acceptedOffer: {
+              select:
+                acceptedOfferSelect,
             },
 
-            select: {
-              id: true,
-              fromStatus: true,
-              toStatus: true,
-              actorType: true,
-              actorId: true,
-              reason: true,
-              createdAt: true,
+            bankDataEncrypted:
+              true,
+
+            bankDataSubmittedAt:
+              true,
+
+            readyAt:
+              true,
+
+            disbursedAt:
+              true,
+
+            cancelledAt:
+              true,
+
+            createdAt:
+              true,
+
+            updatedAt:
+              true,
+
+            statusHistory: {
+              orderBy: {
+                createdAt:
+                  'asc',
+              },
+
+              select: {
+                id: true,
+                fromStatus: true,
+                toStatus: true,
+                actorType: true,
+                actorId: true,
+                reason: true,
+                createdAt: true,
+              },
             },
           },
         },
       },
-    },
-  });
+    });
 
   if (!application) {
     return null;
@@ -57,23 +119,58 @@ export async function getAdminFormalizationByProtocol(protocol: string) {
 
   if (!application.formalization) {
     return {
-      id: application.id,
-      publicProtocol: application.publicProtocol,
-      status: application.status,
-      amount: application.amount,
-      months: application.months,
+      id:
+        application.id,
 
-      formalization: null,
+      publicProtocol:
+        application.publicProtocol,
+
+      status:
+        application.status,
+
+      acceptedOffer:
+        null,
+
+      formalization:
+        null,
     };
   }
 
-  const formalization = application.formalization;
+  const formalization =
+    application.formalization;
+
+  /*
+   * Se acceptedOfferId estiver preenchido,
+   * nenhuma outra proposta ACCEPTED pode
+   * substituir silenciosamente a relação.
+   *
+   * O fallback por application.offers existe
+   * somente para registros legados cujo
+   * acceptedOfferId ainda seja NULL.
+   */
+  const acceptedOffer =
+    formalization.acceptedOfferId
+      ? formalization.acceptedOffer
+            ?.status ===
+          'ACCEPTED'
+        ? formalization.acceptedOffer
+        : null
+      : application.offers[0] ??
+        null;
 
   const operatorIds = [
     ...new Set(
       formalization.statusHistory
-        .filter((event) => event.actorType === 'OPERATOR' && event.actorId)
-        .map((event) => event.actorId as string),
+        .filter(
+          (event) =>
+            event.actorType ===
+              'OPERATOR' &&
+            event.actorId,
+        )
+        .map(
+          (event) =>
+            event.actorId as string,
+        ),
     ),
   ];
 
@@ -93,16 +190,32 @@ export async function getAdminFormalizationByProtocol(protocol: string) {
         })
       : [];
 
-  const operatorNameById = new Map(operators.map((operator) => [operator.id, operator.name]));
+  const operatorNameById =
+    new Map(
+      operators.map(
+        (operator) => [
+          operator.id,
+          operator.name,
+        ],
+      ),
+    );
 
-  const statusHistory = formalization.statusHistory.map((event) => ({
-    ...event,
+  const statusHistory =
+    formalization.statusHistory.map(
+      (event) => ({
+        ...event,
 
-    actorName:
-      event.actorType === 'OPERATOR' && event.actorId
-        ? (operatorNameById.get(event.actorId) ?? 'Operador não encontrado')
-        : null,
-  }));
+        actorName:
+          event.actorType ===
+            'OPERATOR' &&
+          event.actorId
+            ? operatorNameById.get(
+                event.actorId,
+              ) ??
+              'Operador não encontrado'
+            : null,
+      }),
+    );
 
   let bankData: {
     bankName: string;
@@ -113,53 +226,99 @@ export async function getAdminFormalizationByProtocol(protocol: string) {
     pixKey: string;
   } | null = null;
 
-  if (formalization.bankDataEncrypted) {
-    const decrypted = decryptPii(formalization.bankDataEncrypted, `${application.id}:bankData`);
+  if (
+    formalization.bankDataEncrypted
+  ) {
+    const decrypted =
+      decryptPii(
+        formalization.bankDataEncrypted,
 
-    const parsed = parseJsonObject(decrypted);
+        `${application.id}:bankData`,
+      );
+
+    const parsed =
+      parseJsonObject(
+        decrypted,
+      );
 
     bankData = {
-      bankName: readString(parsed, 'bankName'),
+      bankName:
+        readString(
+          parsed,
+          'bankName',
+        ),
 
-      branch: readString(parsed, 'branch'),
+      branch:
+        readString(
+          parsed,
+          'branch',
+        ),
 
-      account: readString(parsed, 'account'),
+      account:
+        readString(
+          parsed,
+          'account',
+        ),
 
-      accountType: readString(parsed, 'accountType'),
+      accountType:
+        readString(
+          parsed,
+          'accountType',
+        ),
 
-      holderName: readString(parsed, 'holderName'),
+      holderName:
+        readString(
+          parsed,
+          'holderName',
+        ),
 
-      pixKey: readString(parsed, 'pixKey'),
+      pixKey:
+        readString(
+          parsed,
+          'pixKey',
+        ),
     };
   }
 
   return {
-    id: application.id,
+    id:
+      application.id,
 
-    publicProtocol: application.publicProtocol,
+    publicProtocol:
+      application.publicProtocol,
 
-    status: application.status,
+    status:
+      application.status,
 
-    amount: application.amount,
-
-    months: application.months,
+    acceptedOffer,
 
     formalization: {
-      id: formalization.id,
+      id:
+        formalization.id,
 
-      status: formalization.status,
+      acceptedOfferId:
+        formalization.acceptedOfferId,
 
-      bankDataSubmittedAt: formalization.bankDataSubmittedAt,
+      status:
+        formalization.status,
 
-      readyAt: formalization.readyAt,
+      bankDataSubmittedAt:
+        formalization.bankDataSubmittedAt,
 
-      disbursedAt: formalization.disbursedAt,
+      readyAt:
+        formalization.readyAt,
 
-      cancelledAt: formalization.cancelledAt,
+      disbursedAt:
+        formalization.disbursedAt,
 
-      createdAt: formalization.createdAt,
+      cancelledAt:
+        formalization.cancelledAt,
 
-      updatedAt: formalization.updatedAt,
+      createdAt:
+        formalization.createdAt,
+
+      updatedAt:
+        formalization.updatedAt,
 
       bankData,
 
@@ -168,10 +327,13 @@ export async function getAdminFormalizationByProtocol(protocol: string) {
   };
 }
 
-export async function findAdminFormalizationForTransition(protocol: string) {
+export async function findAdminFormalizationForTransition(
+  protocol: string,
+) {
   return prisma.creditApplication.findUnique({
     where: {
-      publicProtocol: protocol,
+      publicProtocol:
+        protocol,
     },
 
     select: {
@@ -182,19 +344,44 @@ export async function findAdminFormalizationForTransition(protocol: string) {
         select: {
           id: true,
           status: true,
-          bankDataEncrypted: true,
+
+          bankDataEncrypted:
+            true,
+
+          acceptedOfferId:
+            true,
+
+          acceptedOffer: {
+            select: {
+              id: true,
+              status: true,
+            },
+          },
         },
       },
     },
   });
 }
 
-function parseJsonObject(value: string): Record<string, unknown> {
+function parseJsonObject(
+  value: string,
+): Record<string, unknown> {
   try {
-    const parsed: unknown = JSON.parse(value);
+    const parsed: unknown =
+      JSON.parse(
+        value,
+      );
 
-    if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
-      return parsed as Record<string, unknown>;
+    if (
+      typeof parsed ===
+        'object' &&
+      parsed !== null &&
+      !Array.isArray(parsed)
+    ) {
+      return parsed as Record<
+        string,
+        unknown
+      >;
     }
 
     return {};
@@ -203,8 +390,15 @@ function parseJsonObject(value: string): Record<string, unknown> {
   }
 }
 
-function readString(object: Record<string, unknown>, key: string) {
-  const value = object[key];
+function readString(
+  object: Record<string, unknown>,
+  key: string,
+) {
+  const value =
+    object[key];
 
-  return typeof value === 'string' ? value : '';
+  return typeof value ===
+    'string'
+    ? value
+    : '';
 }

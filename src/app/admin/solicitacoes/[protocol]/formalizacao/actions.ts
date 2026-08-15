@@ -127,6 +127,17 @@ export async function confirmFormalizationReady(
   }
 
   if (
+    hasInvalidAcceptedOfferBinding(
+      application.formalization,
+    )
+  ) {
+    return {
+      error:
+        'A operação não pode avançar porque a proposta vinculada à formalização não está aceita pelo cliente.',
+    };
+  }
+
+  if (
     application.formalization.status !==
     'BANK_DETAILS_SUBMITTED'
   ) {
@@ -307,6 +318,17 @@ export async function registerDisbursement(
   }
 
   if (
+    hasInvalidAcceptedOfferBinding(
+      application.formalization,
+    )
+  ) {
+    return {
+      error:
+        'A operação não pode avançar porque a proposta vinculada à formalização não está aceita pelo cliente.',
+    };
+  }
+
+  if (
     application.formalization.status !==
     'READY_FOR_DISBURSEMENT'
   ) {
@@ -382,6 +404,20 @@ export async function registerDisbursement(
     `/admin/solicitacoes/${encodeURIComponent(
       parsed.data.protocol,
     )}/formalizacao`,
+  );
+}
+
+function hasInvalidAcceptedOfferBinding(
+  formalization: {
+    acceptedOfferId: string | null;
+    acceptedOffer: {
+      status: string;
+    } | null;
+  },
+) {
+  return (
+    formalization.acceptedOfferId !== null &&
+    formalization.acceptedOffer?.status !== 'ACCEPTED'
   );
 }
 

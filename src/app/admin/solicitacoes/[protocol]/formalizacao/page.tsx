@@ -125,9 +125,9 @@ export default async function AdminFormalizationPage({ params }: AdminFormalizat
           <div className="space-y-6">
             <Card title="Resumo da operação">
               <div className="grid gap-6 sm:grid-cols-3">
-                <Detail label="Valor aprovado" value={formatCurrency(application.amount)} />
+                <Detail label="Valor contratado" value={application.acceptedOffer ? formatCurrency(application.acceptedOffer.principalCents / 100) : 'Proposta aceita não localizada'} />
 
-                <Detail label="Prazo" value={`${application.months} meses`} />
+                <Detail label="Parcelas" value={application.acceptedOffer ? `${application.acceptedOffer.installmentCount} × ${formatCurrency(application.acceptedOffer.installmentCents / 100)}` : '—'} />
 
                 <Detail label="Protocolo" value={protocolLabel} />
               </div>
@@ -252,7 +252,11 @@ export default async function AdminFormalizationPage({ params }: AdminFormalizat
 
           <aside>
             <Card title="Ações da formalização">
-              {formalization.status === 'PENDING' ? (
+              {!application.acceptedOffer ? (
+                <StatusMessage>
+                  A operação administrativa está bloqueada porque a proposta aceita vinculada à formalização não foi localizada.
+                </StatusMessage>
+              ) : formalization.status === 'PENDING' ? (
                 <StatusMessage>Aguardando o cliente enviar os dados da conta.</StatusMessage>
               ) : formalization.status === 'BANK_DETAILS_SUBMITTED' ? (
                 <>
