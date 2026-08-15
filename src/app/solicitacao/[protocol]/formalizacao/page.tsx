@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
-import { notFound, redirect } from 'next/navigation';
+import { redirect } from 'next/navigation';
 
 import type { FormalizationStatus } from '@/generated/prisma/client';
 import { formatCurrency } from '@/lib/credit';
@@ -24,13 +24,13 @@ export default async function FormalizationPage({ params }: FormalizationPagePro
   const accessToken = cookieStore.get(APPLICATION_SESSION_COOKIE)?.value;
 
   if (!accessToken) {
-    redirect('/solicitacao');
+    redirect('/acompanhar');
   }
 
   const result = await getFormalizationForSession(protocol, accessToken);
 
   if (!result) {
-    notFound();
+    redirect('/acompanhar');
   }
 
   if (!result.allowed) {

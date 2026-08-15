@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
-import { notFound, redirect } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { AutoStatusRefresh } from './auto-status-refresh';
 
 import type { ApplicationStatus } from '@/generated/prisma/client';
@@ -23,13 +23,13 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
   const accessToken = cookieStore.get(APPLICATION_SESSION_COOKIE)?.value;
 
   if (!accessToken) {
-    redirect('/solicitacao');
+    redirect('/acompanhar');
   }
 
   const application = await findApplicationForSession(protocol, accessToken);
 
   if (!application) {
-    notFound();
+    redirect('/acompanhar');
   }
 
   const presentation = getStatusPresentation(application.status);
@@ -166,6 +166,66 @@ function SummaryItem({
 }
 
 function Progress({ status }: { status: ApplicationStatus }) {
+  if (status === 'DRAFT') {
+    return (
+      <section aria-labelledby="application-progress-title">
+        <p
+          id="application-progress-title"
+          className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400"
+        >
+          Andamento
+        </p>
+
+        <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+          <p className="text-sm font-semibold text-slate-700">
+            Solicitação ainda não enviada
+          </p>
+
+          <p className="mt-1 text-sm leading-6 text-slate-500">
+            O envio precisa ser concluído antes do início da análise.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  if (status === 'CANCELLED') {
+    return (
+      <section aria-labelledby="application-progress-title">
+        <p
+          id="application-progress-title"
+          className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400"
+        >
+          Andamento
+        </p>
+
+        <div
+          role="status"
+          className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5"
+        >
+          <div className="flex items-center gap-3">
+            <div
+              aria-hidden="true"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-600 text-xs font-bold text-white"
+            >
+              ×
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold text-slate-700">
+                Solicitação encerrada
+              </p>
+
+              <p className="mt-0.5 text-xs text-slate-500">
+                Este protocolo não está mais em andamento.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   const currentStep = getCurrentStep(status);
 
   const steps = [
@@ -177,7 +237,7 @@ function Progress({ status }: { status: ApplicationStatus }) {
     {
       number: 2,
       title: 'Análise',
-      description: 'Avaliação da proposta',
+      description: 'Avaliação da solicitação',
     },
     {
       number: 3,
@@ -187,18 +247,28 @@ function Progress({ status }: { status: ApplicationStatus }) {
   ];
 
   return (
-    <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Andamento</p>
+    <section aria-labelledby="application-progress-title">
+      <p
+        id="application-progress-title"
+        className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400"
+      >
+        Andamento
+      </p>
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+      <ol className="mt-5 grid gap-3 sm:grid-cols-3">
         {steps.map((step) => {
-          const completed = step.number < currentStep;
+          const completed =
+            step.number < currentStep;
 
-          const active = step.number === currentStep;
+          const active =
+            step.number === currentStep;
 
           return (
-            <div
+            <li
               key={step.number}
+              aria-current={
+                active ? 'step' : undefined
+              }
               className={`rounded-2xl border p-4 transition ${
                 completed
                   ? 'border-emerald-200 bg-emerald-50'
@@ -209,6 +279,7 @@ function Progress({ status }: { status: ApplicationStatus }) {
             >
               <div className="flex items-center gap-3">
                 <div
+                  aria-hidden="true"
                   className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
                     completed
                       ? 'bg-emerald-600 text-white'
@@ -223,20 +294,26 @@ function Progress({ status }: { status: ApplicationStatus }) {
                 <div>
                   <p
                     className={`text-sm font-semibold ${
-                      completed ? 'text-emerald-800' : active ? 'text-blue-800' : 'text-slate-400'
+                      completed
+                        ? 'text-emerald-800'
+                        : active
+                          ? 'text-blue-800'
+                          : 'text-slate-400'
                     }`}
                   >
                     {step.title}
                   </p>
 
-                  <p className="mt-0.5 text-xs text-slate-500">{step.description}</p>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    {step.description}
+                  </p>
                 </div>
               </div>
-            </div>
+            </li>
           );
         })}
-      </div>
-    </div>
+      </ol>
+    </section>
   );
 }
 
@@ -260,7 +337,7 @@ function StatusContent({
     return (
       <StatusBox
         title="Recebemos sua solicitação"
-        description="Seus dados foram registrados com sucesso. A proposta está aguardando o início da análise."
+        description="Seus dados foram registrados com sucesso. Sua solicitação está aguardando o início da análise."
       />
     );
   }
@@ -268,8 +345,8 @@ function StatusContent({
   if (status === 'UNDER_REVIEW') {
     return (
       <StatusBox
-        title="Sua proposta está sendo analisada"
-        description="Nossa equipe está avaliando as informações da solicitação. O resultado será registrado assim que a análise for concluída."
+        title="Sua solicitação está sendo analisada"
+        description="As informações da sua solicitação estão em análise. O resultado será apresentado nesta área assim que o processo for concluído."
       />
     );
   }
@@ -301,7 +378,7 @@ function StatusContent({
               className="group mt-6 flex w-full items-center justify-between rounded-xl bg-blue-600 px-5 py-4 text-sm font-semibold !text-white shadow-sm transition hover:bg-blue-700 hover:shadow-md sm:w-auto sm:min-w-72"
             >
               <span className="!text-white">
-                Ver minha proposta
+                Consultar próximas condições
               </span>
 
               <span
@@ -357,7 +434,7 @@ function StatusBox({ title, description }: { title: string; description: string 
         </div>
 
         <p className="text-sm leading-6 text-slate-600">
-          Atualize esta página posteriormente para consultar o status mais recente da solicitação.
+          O status desta página é atualizado automaticamente enquanto sua solicitação estiver em análise.
         </p>
       </div>
     </div>
@@ -407,8 +484,8 @@ function getStatusPresentation(status: ApplicationStatus) {
     case 'UNDER_REVIEW':
       return {
         eyebrow: 'Crédito em análise',
-        title: 'Estamos analisando sua proposta',
-        description: 'Sua solicitação está passando pelo processo interno de análise de crédito.',
+        title: 'Estamos analisando sua solicitação',
+        description: 'Sua solicitação está passando pelo processo de análise de crédito.',
         icon: '•••',
         headerClassName: 'border-amber-100 bg-amber-50',
         iconClassName: 'bg-amber-500 text-white',
@@ -418,8 +495,8 @@ function getStatusPresentation(status: ApplicationStatus) {
     case 'APPROVED':
       return {
         eyebrow: 'Análise concluída',
-        title: 'Crédito aprovado',
-        description: 'A análise da sua solicitação foi concluída com resultado positivo.',
+        title: 'Solicitação aprovada',
+        description: 'A análise da sua solicitação foi concluída com resultado positivo. A contratação ainda depende da apresentação das condições e da sua decisão.',
         icon: '✓',
         headerClassName: 'border-emerald-100 bg-emerald-50',
         iconClassName: 'bg-emerald-600 text-white',
@@ -449,4 +526,5 @@ function getStatusPresentation(status: ApplicationStatus) {
       };
   }
 }
+
 
