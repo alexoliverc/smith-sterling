@@ -156,7 +156,103 @@ describe('formalization-status workflow', () => {
     });
   });
 
+
+    it('valida exatamente a proposta vinculada pela formalização', async () => {
+      mocks.tx.creditFormalization.findUnique.mockResolvedValue({
+        id: 'formalization-1',
+        applicationId: 'application-1',
+        acceptedOfferId: 'offer-2',
+        status: 'PENDING',
+      });
+
+      mocks.tx.creditOffer.findFirst.mockResolvedValue(
+        null,
+      );
+
+      await expect(
+        submitFormalizationBankData(
+          'formalization-1',
+          'encrypted-bank-data',
+        ),
+      ).rejects.toBeInstanceOf(
+        FormalizationOfferNotAcceptedError,
+      );
+
+      expect(
+        mocks.tx.creditOffer.findFirst,
+      ).toHaveBeenCalledWith({
+        where: {
+          id: 'offer-2',
+          applicationId: 'application-1',
+          status: 'ACCEPTED',
+        },
+
+        select: {
+          id: true,
+        },
+      });
+
+      expect(
+        mocks.tx.creditFormalization.updateMany,
+      ).not.toHaveBeenCalled();
+
+      expect(
+        mocks.tx.formalizationStatusHistory.create,
+      ).not.toHaveBeenCalled();
+    });
+
   describe('compatibilidade com registros legados', () => {
+
+    it('usa fallback por solicitação quando acceptedOfferId legado é nulo', async () => {
+      mocks.tx.creditFormalization.findUnique
+        .mockResolvedValueOnce({
+          id: 'formalization-legacy',
+          applicationId: 'application-1',
+          acceptedOfferId: null,
+          status: 'PENDING',
+        })
+        .mockResolvedValueOnce({
+          id: 'formalization-legacy',
+          status: 'BANK_DETAILS_SUBMITTED',
+          bankDataSubmittedAt: new Date(),
+          updatedAt: new Date(),
+        });
+
+      mocks.tx.creditOffer.findFirst.mockResolvedValue({
+        id: 'accepted-offer-legacy',
+      });
+
+      mocks.tx.creditFormalization.updateMany.mockResolvedValue({
+        count: 1,
+      });
+
+      mocks.tx.formalizationStatusHistory.create.mockResolvedValue({
+        id: 'history-legacy',
+      });
+
+      await submitFormalizationBankData(
+        'formalization-legacy',
+        'encrypted-bank-data',
+      );
+
+      expect(
+        mocks.tx.creditOffer.findFirst,
+      ).toHaveBeenCalledWith({
+        where: {
+          applicationId: 'application-1',
+          status: 'ACCEPTED',
+        },
+
+        select: {
+          id: true,
+        },
+      });
+
+      expect(
+        mocks.tx.creditFormalization.updateMany,
+      ).toHaveBeenCalled();
+    });
+
     it('permite cancelamento mesmo sem proposta aceita', async () => {
       mocks.tx.creditFormalization.findUnique
         .mockResolvedValueOnce({

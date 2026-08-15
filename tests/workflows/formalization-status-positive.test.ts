@@ -234,4 +234,74 @@ describe('formalization-status - caminho positivo', () => {
       },
     });
   });
+
+  it('audita correção dos dados bancários sem registrar PII', async () => {
+    mocks.tx.creditFormalization.findUnique
+      .mockResolvedValueOnce({
+        id: 'formalization-1',
+        applicationId: 'application-1',
+        acceptedOfferId: null,
+        status: 'BANK_DETAILS_SUBMITTED',
+      })
+      .mockResolvedValueOnce({
+        id: 'formalization-1',
+        status: 'BANK_DETAILS_SUBMITTED',
+        bankDataSubmittedAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+    await submitFormalizationBankData(
+      'formalization-1',
+      'new-encrypted-bank-data',
+    );
+
+    expect(
+      mocks.tx.creditOffer.findFirst,
+    ).toHaveBeenCalledWith({
+      where: {
+        applicationId: 'application-1',
+        status: 'ACCEPTED',
+      },
+
+      select: {
+        id: true,
+      },
+    });
+
+    expect(
+      mocks.tx.creditFormalization.updateMany,
+    ).toHaveBeenCalledWith({
+      where: {
+        id: 'formalization-1',
+        status: 'BANK_DETAILS_SUBMITTED',
+      },
+
+      data: {
+        bankDataEncrypted: 'new-encrypted-bank-data',
+        bankDataSubmittedAt: expect.any(Date),
+      },
+    });
+
+    expect(
+      mocks.tx.formalizationStatusHistory.create,
+    ).toHaveBeenCalledWith({
+      data: {
+        formalizationId: 'formalization-1',
+        fromStatus: 'BANK_DETAILS_SUBMITTED',
+        toStatus: 'BANK_DETAILS_SUBMITTED',
+        actorType: 'APPLICANT',
+        actorId: null,
+        reason: 'Dados bancários atualizados pelo cliente.',
+      },
+    });
+
+    expect(
+      JSON.stringify(
+        mocks.tx.formalizationStatusHistory.create.mock.calls,
+      ),
+    ).not.toContain(
+      'new-encrypted-bank-data',
+    );
+  });
+
 });

@@ -228,6 +228,7 @@ export async function decidePublicCreditOffer(
             select: {
               id: true,
               status: true,
+              acceptedOfferId: true,
             },
           });
 
@@ -252,6 +253,21 @@ export async function decidePublicCreditOffer(
             existingFormalization.status ===
               'DISBURSED'
           )
+        ) {
+          throw new CreditOfferFormalizationConflictError();
+        }
+
+
+        /*
+         * Uma formalização já vinculada a uma
+         * proposta não pode ser reutilizada para
+         * aceitar outra versão.
+         *
+         * Registros legados com acceptedOfferId
+         * nulo serão vinculados abaixo no upsert.
+         */
+        if (
+          existingFormalization?.acceptedOfferId
         ) {
           throw new CreditOfferFormalizationConflictError();
         }
@@ -332,11 +348,17 @@ export async function decidePublicCreditOffer(
               input.applicationId,
           },
 
-          update: {},
+          update: {
+            acceptedOfferId:
+              offer.id,
+          },
 
           create: {
             applicationId:
               input.applicationId,
+
+            acceptedOfferId:
+              offer.id,
 
             status:
               'PENDING',

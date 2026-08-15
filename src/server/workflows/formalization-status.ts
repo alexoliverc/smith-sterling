@@ -90,6 +90,47 @@ export class FormalizationOfferNotAcceptedError extends Error {
   }
 }
 
+type FormalizationOfferContext = {
+  applicationId: string;
+  acceptedOfferId: string | null;
+};
+
+async function assertAcceptedOfferForFormalization(
+  tx: Pick<typeof prisma, 'creditOffer'>,
+  formalization: FormalizationOfferContext,
+) {
+  const acceptedOffer =
+    await tx.creditOffer.findFirst({
+      where:
+        formalization.acceptedOfferId
+          ? {
+              id:
+                formalization.acceptedOfferId,
+
+              applicationId:
+                formalization.applicationId,
+
+              status:
+                'ACCEPTED',
+            }
+          : {
+              applicationId:
+                formalization.applicationId,
+
+              status:
+                'ACCEPTED',
+            },
+
+      select: {
+        id: true,
+      },
+    });
+
+  if (!acceptedOffer) {
+    throw new FormalizationOfferNotAcceptedError();
+  }
+}
+
 export async function transitionFormalizationStatus(
   formalizationId: string,
   toStatus: FormalizationStatus,
@@ -108,6 +149,9 @@ export async function transitionFormalizationStatus(
             id: true,
 
             applicationId:
+              true,
+
+            acceptedOfferId:
               true,
 
             status: true,
@@ -131,24 +175,10 @@ export async function transitionFormalizationStatus(
         toStatus !==
         'CANCELLED'
       ) {
-        const acceptedOffer =
-          await tx.creditOffer.findFirst({
-            where: {
-              applicationId:
-                formalization.applicationId,
-
-              status:
-                'ACCEPTED',
-            },
-
-            select: {
-              id: true,
-            },
-          });
-
-        if (!acceptedOffer) {
-          throw new FormalizationOfferNotAcceptedError();
-        }
+        await assertAcceptedOfferForFormalization(
+          tx,
+          formalization,
+        );
       }
 
       const fromStatus =
@@ -291,6 +321,9 @@ export async function submitFormalizationBankData(
             applicationId:
               true,
 
+            acceptedOfferId:
+              true,
+
             status: true,
           },
         });
@@ -307,24 +340,10 @@ export async function submitFormalizationBankData(
        * dados bancários não entram no fluxo
        * sem aceite prévio da proposta.
        */
-      const acceptedOffer =
-        await tx.creditOffer.findFirst({
-          where: {
-            applicationId:
-              formalization.applicationId,
-
-            status:
-              'ACCEPTED',
-          },
-
-          select: {
-            id: true,
-          },
-        });
-
-      if (!acceptedOffer) {
-        throw new FormalizationOfferNotAcceptedError();
-      }
+        await assertAcceptedOfferForFormalization(
+          tx,
+          formalization,
+        );
 
       const now =
         new Date();
@@ -430,6 +449,36 @@ export async function submitFormalizationBankData(
           throw new ConcurrentFormalizationStatusTransitionError();
         }
 
+
+        /*
+         * A correção não altera o estado
+         * da formalização, mas precisa
+         * permanecer auditável.
+         *
+         * Nenhum dado bancário sensível
+         * é gravado no histórico.
+         */
+        await tx.formalizationStatusHistory.create({
+          data: {
+            formalizationId,
+
+            fromStatus:
+              'BANK_DETAILS_SUBMITTED',
+
+            toStatus:
+              'BANK_DETAILS_SUBMITTED',
+
+            actorType:
+              'APPLICANT',
+
+            actorId:
+              null,
+
+            reason:
+              'Dados bancários atualizados pelo cliente.',
+          },
+        });
+
         return tx.creditFormalization.findUnique({
           where: {
             id:
@@ -474,6 +523,9 @@ export async function registerFormalizationDisbursement(
             applicationId:
               true,
 
+            acceptedOfferId:
+              true,
+
             status: true,
           },
         });
@@ -494,24 +546,10 @@ export async function registerFormalizationDisbursement(
        * Ainda assim, o registro não pode
        * avançar sem oferta aceita.
        */
-      const acceptedOffer =
-        await tx.creditOffer.findFirst({
-          where: {
-            applicationId:
-              formalization.applicationId,
-
-            status:
-              'ACCEPTED',
-          },
-
-          select: {
-            id: true,
-          },
-        });
-
-      if (!acceptedOffer) {
-        throw new FormalizationOfferNotAcceptedError();
-      }
+        await assertAcceptedOfferForFormalization(
+          tx,
+          formalization,
+        );
 
       const fromStatus =
         formalization.status;

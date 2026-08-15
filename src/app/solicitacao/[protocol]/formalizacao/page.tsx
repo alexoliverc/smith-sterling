@@ -37,7 +37,7 @@ export default async function FormalizationPage({ params }: FormalizationPagePro
     redirect(`/solicitacao/${encodeURIComponent(protocol)}/analise`);
   }
 
-  const { application, formalization } = result;
+  const { formalization, offer } = result;
 
   const bankDataReceived =
     formalization.status === 'BANK_DETAILS_SUBMITTED' ||
@@ -89,8 +89,8 @@ export default async function FormalizationPage({ params }: FormalizationPagePro
                 </h1>
 
                 <p className="mt-4 leading-7 text-slate-600">
-                  Sua análise foi concluída. Agora estamos preparando as informações necessárias
-                  para a etapa de liberação do crédito.
+                  Sua proposta foi aceita. Agora estamos preparando as informações necessárias
+                  para concluir a formalização e seguir para as etapas de liberação.
                 </p>
               </div>
 
@@ -110,9 +110,9 @@ export default async function FormalizationPage({ params }: FormalizationPagePro
             <div className="grid gap-4 sm:grid-cols-3">
               <SummaryCard label="Protocolo" value={protocol} mono />
 
-              <SummaryCard label="Valor aprovado" value={formatCurrency(application.amount)} />
+              <SummaryCard label="Valor contratado" value={formatCurrency(offer.principalCents / 100)} />
 
-              <SummaryCard label="Prazo" value={`${application.months} meses`} />
+              <SummaryCard label="Parcelas" value={`${offer.installmentCount} × ${formatCurrency(offer.installmentCents / 100)}`} />
             </div>
 
             <div className="mt-10">

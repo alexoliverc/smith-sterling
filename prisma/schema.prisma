@@ -119,6 +119,9 @@ model CreditFormalization {
   applicationId String            @unique
   application   CreditApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
+  acceptedOfferId String?      @unique
+  acceptedOffer   CreditOffer? @relation(fields: [acceptedOfferId], references: [id], onDelete: Restrict)
+
   status FormalizationStatus @default(PENDING)
 
   bankDataEncrypted              String? @db.Text
@@ -207,6 +210,8 @@ model CreditOffer {
   applicationId String
   application   CreditApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
+  formalization CreditFormalization?
+
   version Int
 
   status CreditOfferStatus @default(DRAFT)
@@ -279,4 +284,3 @@ model CreditOfferStatusHistory {
 
   @@index([offerId, createdAt])
 }
-

@@ -280,11 +280,17 @@ describe('public-credit-offer - decisão do cliente', () => {
           'application-1',
       },
 
-      update: {},
+      update: {
+        acceptedOfferId:
+          'offer-1',
+      },
 
       create: {
         applicationId:
           'application-1',
+
+        acceptedOfferId:
+          'offer-1',
 
         status:
           'PENDING',

@@ -50,31 +50,11 @@ export async function getFormalizationForSession(
         status:
           publicApplication.status,
 
-        amount:
-          publicApplication.amount,
-
-        months:
-          publicApplication.months,
-
         protocol,
       },
     };
   }
 
-  /*
-   * A formalização não é mais criada
-   * simplesmente porque a solicitação
-   * foi aprovada.
-   *
-   * Para liberar acesso precisamos de:
-   *
-   * 1. CreditApplication APPROVED
-   * 2. CreditOffer ACCEPTED
-   * 3. CreditFormalization existente
-   *
-   * A CreditFormalization passa a nascer
-   * dentro do workflow de aceite.
-   */
   const application =
     await prisma.creditApplication.findUnique({
       where: {
@@ -85,6 +65,15 @@ export async function getFormalizationForSession(
       select: {
         id: true,
 
+        /*
+         * Compatibilidade temporária com
+         * formalizações anteriores à criação
+         * de acceptedOfferId.
+         *
+         * Para registros novos, a relação
+         * formalization.acceptedOffer abaixo
+         * é sempre a fonte autoritativa.
+         */
         offers: {
           where: {
             status:
@@ -101,13 +90,70 @@ export async function getFormalizationForSession(
           select: {
             id: true,
             version: true,
-            acceptedAt: true,
+            status: true,
+
+            principalCents:
+              true,
+
+            netDisbursementCents:
+              true,
+
+            installmentCents:
+              true,
+
+            totalRepaymentCents:
+              true,
+
+            months: true,
+
+            installmentCount:
+              true,
+
+            acceptedAt:
+              true,
+
+            termsVersion:
+              true,
           },
         },
 
         formalization: {
           select: {
             status: true,
+
+            acceptedOfferId:
+              true,
+
+            acceptedOffer: {
+              select: {
+                id: true,
+                version: true,
+                status: true,
+
+                principalCents:
+                  true,
+
+                netDisbursementCents:
+                  true,
+
+                installmentCents:
+                  true,
+
+                totalRepaymentCents:
+                  true,
+
+                months: true,
+
+                installmentCount:
+                  true,
+
+                acceptedAt:
+                  true,
+
+                termsVersion:
+                  true,
+              },
+            },
 
             bankDataSubmittedAt:
               true,
@@ -128,39 +174,10 @@ export async function getFormalizationForSession(
     return null;
   }
 
-  if (
-    application.offers.length ===
-    0
-  ) {
-    return {
-      allowed: false as const,
-
-      reason:
-        'OFFER_NOT_ACCEPTED' as const,
-
-      application: {
-        status:
-          publicApplication.status,
-
-        amount:
-          publicApplication.amount,
-
-        months:
-          publicApplication.months,
-
-        protocol,
-      },
-    };
-  }
-
   /*
-   * Uma proposta ACCEPTED deve possuir
-   * formalização porque o workflow de
-   * aceite é responsável por criá-la.
-   *
-   * Se não existir, tratamos como
-   * inconsistência de estado em vez de
-   * recriá-la silenciosamente aqui.
+   * A formalização deve ter sido criada
+   * no mesmo workflow que registrou o
+   * aceite da proposta.
    */
   if (!application.formalization) {
     return {
@@ -173,11 +190,42 @@ export async function getFormalizationForSession(
         status:
           publicApplication.status,
 
-        amount:
-          publicApplication.amount,
+        protocol,
+      },
+    };
+  }
 
-        months:
-          publicApplication.months,
+  /*
+   * Quando acceptedOfferId existe, não
+   * fazemos fallback para outra proposta.
+   *
+   * Isso impede que uma inconsistência
+   * relacional seja mascarada escolhendo
+   * simplesmente outra oferta ACCEPTED.
+   */
+  const acceptedOffer =
+    application.formalization
+      .acceptedOfferId
+      ? application.formalization
+            .acceptedOffer
+          ?.status ===
+        'ACCEPTED'
+        ? application.formalization
+            .acceptedOffer
+        : null
+      : application.offers[0] ??
+        null;
+
+  if (!acceptedOffer) {
+    return {
+      allowed: false as const,
+
+      reason:
+        'OFFER_NOT_ACCEPTED' as const,
+
+      application: {
+        status:
+          publicApplication.status,
 
         protocol,
       },
@@ -191,14 +239,11 @@ export async function getFormalizationForSession(
       status:
         publicApplication.status,
 
-      amount:
-        publicApplication.amount,
-
-      months:
-        publicApplication.months,
-
       protocol,
     },
+
+    offer:
+      acceptedOffer,
 
     formalization:
       application.formalization,
@@ -247,6 +292,10 @@ export async function saveBankDataForSession(
       select: {
         id: true,
 
+        /*
+         * Fallback somente para registros
+         * legados ainda sem acceptedOfferId.
+         */
         offers: {
           where: {
             status:
@@ -270,6 +319,16 @@ export async function saveBankDataForSession(
           select: {
             id: true,
             status: true,
+
+            acceptedOfferId:
+              true,
+
+            acceptedOffer: {
+              select: {
+                id: true,
+                status: true,
+              },
+            },
           },
         },
       },
@@ -284,41 +343,31 @@ export async function saveBankDataForSession(
     };
   }
 
-  /*
-   * Mantemos NOT_APPROVED como retorno
-   * público para preservar a semântica
-   * atual da Server Action enquanto
-   * migramos a interface.
-   *
-   * Internamente, neste ponto, significa:
-   * não existe CreditOffer ACCEPTED.
-   */
-  if (
-    application.offers.length ===
-    0
-  ) {
-    return {
-      success: false as const,
-
-      reason:
-        'NOT_APPROVED' as const,
-    };
-  }
-
-  /*
-   * Não criamos mais uma formalização
-   * automaticamente durante o envio dos
-   * dados bancários.
-   *
-   * Ela obrigatoriamente deve ter sido
-   * criada pelo aceite da proposta.
-   */
   if (!application.formalization) {
     return {
       success: false as const,
 
       reason:
         'NOT_FOUND' as const,
+    };
+  }
+
+  const acceptedOfferExists =
+    application.formalization
+      .acceptedOfferId
+      ? application.formalization
+            .acceptedOffer
+          ?.status ===
+        'ACCEPTED'
+      : application.offers.length >
+        0;
+
+  if (!acceptedOfferExists) {
+    return {
+      success: false as const,
+
+      reason:
+        'NOT_APPROVED' as const,
     };
   }
 

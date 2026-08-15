@@ -400,4 +400,70 @@ describe('public-credit-offer - casos adversos', () => {
     );
   });
 
+
+  it('bloqueia aceite quando a formalização já pertence a outra proposta', async () => {
+    vi.clearAllMocks();
+
+    mocks.transaction.mockImplementation(
+      async (
+        callback: (
+          transactionClient:
+            typeof mocks.tx,
+        ) => unknown,
+      ) =>
+        callback(
+          mocks.tx,
+        ),
+    );
+
+    mocks.tx.creditApplication.update.mockResolvedValue({
+      id: 'application-1',
+    });
+
+    mocks.tx.creditOffer.findUnique.mockResolvedValue({
+      id: 'offer-2',
+      applicationId: 'application-1',
+      version: 2,
+      status: 'PRESENTED',
+      expiresAt:
+        new Date(
+          '2026-08-20T15:00:00.000Z',
+        ),
+    });
+
+    mocks.tx.creditFormalization.findUnique.mockResolvedValue({
+      id: 'formalization-1',
+      status: 'PENDING',
+      acceptedOfferId:
+        'offer-1',
+    });
+
+    await expect(
+      decidePublicCreditOffer({
+        applicationId:
+          'application-1',
+
+        version:
+          2,
+
+        decision:
+          'ACCEPT',
+      }),
+    ).rejects.toBeInstanceOf(
+      CreditOfferFormalizationConflictError,
+    );
+
+    expect(
+      mocks.tx.creditOffer.updateMany,
+    ).not.toHaveBeenCalled();
+
+    expect(
+      mocks.tx.creditOfferStatusHistory.create,
+    ).not.toHaveBeenCalled();
+
+    expect(
+      mocks.tx.creditFormalization.upsert,
+    ).not.toHaveBeenCalled();
+  });
+
 });
