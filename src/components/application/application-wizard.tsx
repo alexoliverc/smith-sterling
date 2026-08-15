@@ -1,6 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
@@ -112,9 +113,7 @@ export function ApplicationWizard({ amount, months }: ApplicationWizardProps) {
       }
 
       router.push(`/solicitacao/${encodeURIComponent(result.protocol)}/analise`);
-    } catch (error) {
-      console.error('Erro inesperado ao criar solicitação:', error);
-
+    } catch {
       setSubmitError('Ocorreu um erro inesperado. Tente novamente em alguns instantes.');
     } finally {
       setIsSubmitting(false);
@@ -139,7 +138,15 @@ export function ApplicationWizard({ amount, months }: ApplicationWizardProps) {
           </p>
         </div>
 
-        <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200">
+        <div
+          role="progressbar"
+          aria-label="Progresso da solicitação"
+          aria-valuemin={1}
+          aria-valuemax={TOTAL_STEPS}
+          aria-valuenow={currentStep}
+          aria-valuetext={`Etapa ${currentStep} de ${TOTAL_STEPS}`}
+          className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200"
+        >
           <div
             className="h-full rounded-full bg-blue-600 transition-all duration-300"
             style={{
@@ -476,6 +483,45 @@ export function ApplicationWizard({ amount, months }: ApplicationWizardProps) {
                 aprovação automática ou garantia de concessão de crédito.
               </p>
             </div>
+
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+              <p className="text-sm font-semibold text-[#0b1f33]">
+                Como seus dados são utilizados
+              </p>
+
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Os dados informados nesta solicitação serão utilizados para viabilizar o cadastro, a análise da solicitação, a apresentação de eventual proposta, a formalização e as demais atividades descritas na nossa Política de Privacidade.
+              </p>
+
+              <Link
+                href="/privacidade"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-flex text-sm font-semibold text-blue-600 transition hover:text-blue-700"
+              >
+                Consultar Política de Privacidade →
+              </Link>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 p-5">
+              <p className="text-sm font-semibold text-emerald-900">
+                Confirmação das informações
+              </p>
+
+              <p className="mt-2 text-sm leading-6 text-emerald-900/80">
+                Ao enviar a solicitação, você declara que as informações fornecidas são verdadeiras, completas e atualizadas de acordo com o seu conhecimento.
+              </p>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+              <p className="text-sm font-semibold text-amber-900">
+                Proteja suas credenciais
+              </p>
+
+              <p className="mt-2 text-sm leading-6 text-amber-800">
+                Para enviar esta solicitação, não informe senha bancária, senha de aplicativo financeiro, token, código recebido por SMS, CVV ou credenciais de internet banking.
+              </p>
+            </div>
           </>
         )}
 
@@ -533,14 +579,33 @@ function Fields({ children }: { children: ReactNode }) {
   return <div className="mt-10 grid gap-6">{children}</div>;
 }
 
-function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
+function Field({
+  label,
+  error,
+  children,
+}: {
+  label: string;
+  error?: string;
+  children: ReactNode;
+}) {
   return (
     <div>
-      <label className="mb-2 block text-sm font-medium text-slate-700">{label}</label>
+      <label className="block">
+        <span className="mb-2 block text-sm font-medium text-slate-700">
+          {label}
+        </span>
 
-      {children}
+        {children}
+      </label>
 
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {error && (
+        <p
+          role="alert"
+          className="mt-2 text-sm text-red-600"
+        >
+          {error}
+        </p>
+      )}
     </div>
   );
 }
