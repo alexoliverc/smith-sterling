@@ -312,4 +312,3 @@ export async function recoverApplicationAccess(
     accessToken,
   };
 }
-

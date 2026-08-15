@@ -526,5 +526,3 @@ function getStatusPresentation(status: ApplicationStatus) {
       };
   }
 }
-
-

@@ -406,5 +406,3 @@ function readString(object: Record<string, unknown>, key: string) {
 
   return typeof value === 'string' ? value : '';
 }
-
-
