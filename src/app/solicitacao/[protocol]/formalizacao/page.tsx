@@ -253,9 +253,13 @@ function FormalizationProgress({ status }: { status: FormalizationStatus }) {
 
       <div className="mt-5 grid gap-3 sm:grid-cols-3">
         {steps.map((step) => {
-          const completed = step.number < currentStep;
+          const completed =
+            status === 'DISBURSED' ||
+            step.number < currentStep;
 
-          const active = step.number === currentStep;
+          const active =
+            status !== 'DISBURSED' &&
+            step.number === currentStep;
 
           return (
             <div
