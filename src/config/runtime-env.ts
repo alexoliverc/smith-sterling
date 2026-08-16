@@ -92,11 +92,14 @@ function validateDatabaseUrl(
   }
 
   if (
-    appEnvironment === 'production' &&
+    (
+      appEnvironment === 'staging' ||
+      appEnvironment === 'production'
+    ) &&
     !url.password
   ) {
     throw new Error(
-      'DATABASE_URL de produção precisa possuir credencial de acesso.',
+      'DATABASE_URL de staging e produção precisa possuir credencial de acesso.',
     );
   }
 }

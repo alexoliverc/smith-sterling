@@ -168,5 +168,41 @@ describe(
         );
       },
     );
+    it(
+      'bloqueia staging sem credencial de banco',
+      () => {
+        configureValidEnvironment(
+          'staging',
+        );
+
+        vi.stubEnv(
+          'DATABASE_URL',
+          'mysql://smith_app@db.example.internal:3306/smith_sterling_staging',
+        );
+
+        expect(
+          () =>
+            validateRuntimeEnvironment(),
+        ).toThrow(
+          'DATABASE_URL de staging e produção precisa possuir credencial de acesso.',
+        );
+      },
+    );
+
+    it(
+      'aceita staging com credencial de banco',
+      () => {
+        configureValidEnvironment(
+          'staging',
+        );
+
+        expect(
+          validateRuntimeEnvironment(),
+        ).toEqual({
+          appEnvironment:
+            'staging',
+        });
+      },
+    );
   },
 );
