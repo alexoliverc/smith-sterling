@@ -106,8 +106,7 @@ export async function startApplicationAnalysis(
     }
 
     console.error(
-      'Falha ao iniciar análise administrativa.',
-      error instanceof Error ? error.message : 'Erro desconhecido',
+      'Falha ao iniciar análise administrativa.'
     );
 
     return {
@@ -195,8 +194,7 @@ export async function decideApplication(
     }
 
     console.error(
-      'Falha ao registrar decisão administrativa.',
-      error instanceof Error ? error.message : 'Erro desconhecido',
+      'Falha ao registrar decisão administrativa.'
     );
 
     return {

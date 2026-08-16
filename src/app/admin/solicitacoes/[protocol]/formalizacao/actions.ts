@@ -10,7 +10,10 @@ import {
   ADMIN_SESSION_COOKIE,
   findAdminSession,
 } from '@/server/auth/admin-session';
-import { findAdminFormalizationForTransition } from '@/server/dal/admin-formalization';
+import {
+  findAdminFormalizationForTransition,
+  getAdminFormalizationByProtocol,
+} from '@/server/dal/admin-formalization';
 
 import {
   ConcurrentFormalizationStatusTransitionError,
@@ -49,6 +52,127 @@ export type ConfirmReadyState = {
 export type DisbursementState = {
   error?: string;
 };
+
+export type RevealedBankData = {
+  bankName: string;
+  branch: string;
+  account: string;
+  accountType: string;
+  holderName: string;
+  pixKey: string;
+};
+
+export type RevealBankDataState = {
+  data?: RevealedBankData;
+  error?: string;
+};
+
+export async function revealBankData(
+  protocol: string,
+): Promise<RevealBankDataState> {
+  const parsed =
+    protocolSchema.safeParse(
+      protocol,
+    );
+
+  if (!parsed.success) {
+    return {
+      error:
+        'Protocolo inválido.',
+    };
+  }
+
+  const cookieStore =
+    await cookies();
+
+  const token =
+    cookieStore.get(
+      ADMIN_SESSION_COOKIE,
+    )?.value;
+
+  if (!token) {
+    redirect('/admin/login');
+  }
+
+  const session =
+    await findAdminSession(
+      token,
+    );
+
+  if (!session) {
+    redirect('/admin/login');
+  }
+
+  if (
+    session.user.role !==
+    'SUPER_ADMIN'
+  ) {
+    return {
+      error:
+        'Seu perfil não possui autorização para revelar dados bancários.',
+    };
+  }
+
+  const application =
+    await getAdminFormalizationByProtocol(
+      parsed.data,
+    );
+
+  if (
+    !application ||
+    !application.formalization ||
+    !application.formalization.bankData
+  ) {
+    return {
+      error:
+        'Dados bancários não disponíveis para esta operação.',
+    };
+  }
+
+  if (
+    application.formalization.status !==
+      'BANK_DETAILS_SUBMITTED' &&
+    application.formalization.status !==
+      'READY_FOR_DISBURSEMENT'
+  ) {
+    return {
+      error:
+        'Os dados completos só podem ser revelados durante a preparação da liberação.',
+    };
+  }
+
+  console.info(
+    'Dados bancários revelados para execução da operação.',
+    {
+      adminUserId:
+        session.user.id,
+      formalizationId:
+        application.formalization.id,
+    },
+  );
+
+  return {
+    data: {
+      bankName:
+        application.formalization.bankData.bankName,
+
+      branch:
+        application.formalization.bankData.branch,
+
+      account:
+        application.formalization.bankData.account,
+
+      accountType:
+        application.formalization.bankData.accountType,
+
+      holderName:
+        application.formalization.bankData.holderName,
+
+      pixKey:
+        application.formalization.bankData.pixKey,
+    },
+  };
+}
 
 export async function confirmFormalizationReady(
   protocol: string,
@@ -196,10 +320,7 @@ export async function confirmFormalizationReady(
     }
 
     console.error(
-      'Falha ao confirmar formalização.',
-      error instanceof Error
-        ? error.message
-        : 'Erro desconhecido',
+      'Falha ao confirmar formalização.'
     );
 
     return {
@@ -384,10 +505,7 @@ export async function registerDisbursement(
     }
 
     console.error(
-      'Falha ao registrar liberação financeira.',
-      error instanceof Error
-        ? error.message
-        : 'Erro desconhecido',
+      'Falha ao registrar liberação financeira.'
     );
 
     return {

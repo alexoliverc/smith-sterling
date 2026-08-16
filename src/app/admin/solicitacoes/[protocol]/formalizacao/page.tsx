@@ -13,6 +13,7 @@ import { getAdminFormalizationByProtocol } from '@/server/dal/admin-formalizatio
 
 import { ConfirmReadyButton } from './confirm-ready-button';
 import { DisbursementForm } from './disbursement-form';
+import { RevealBankDataPanel } from './reveal-bank-data-panel';
 
 type AdminFormalizationPageProps = {
   params: Promise<{
@@ -97,6 +98,12 @@ export default async function AdminFormalizationPage({ params }: AdminFormalizat
     (formalization.status === 'DISBURSED' ||
       formalization.status === 'CANCELLED');
 
+  const bankDataRevealAllowed =
+    formalization.status ===
+      'BANK_DETAILS_SUBMITTED' ||
+    formalization.status ===
+      'READY_FOR_DISBURSEMENT';
+
   return (
     <main className="min-h-screen bg-slate-50">
       <AdminHeader
@@ -179,7 +186,7 @@ export default async function AdminFormalizationPage({ params }: AdminFormalizat
                       value={maskFinancialValue(formalization.bankData.account)}
                     />
 
-                    <Detail label="Titular" value={formalization.bankData.holderName} />
+                    <Detail label="Titular" value={maskHolderName(formalization.bankData.holderName)} />
 
                     <Detail
                       label="Chave Pix"
@@ -190,33 +197,10 @@ export default async function AdminFormalizationPage({ params }: AdminFormalizat
                       }
                     />
                   </div>
-
-                  <details className="mt-7 rounded-2xl border border-amber-200 bg-amber-50 p-5">
-                    <summary className="cursor-pointer text-sm font-semibold text-amber-900">
-                      Mostrar dados completos para conferência
-                    </summary>
-
-                    <div className="mt-5 grid gap-x-8 gap-y-7 border-t border-amber-200 pt-5 md:grid-cols-2">
-                      <Detail
-                        label="Agência completa"
-                        value={formalization.bankData.branch}
-                      />
-
-                      <Detail
-                        label="Conta completa"
-                        value={formalization.bankData.account}
-                      />
-
-                      <Detail
-                        label="Chave Pix completa"
-                        value={formalization.bankData.pixKey || 'Não informada'}
-                      />
-                    </div>
-
-                    <p className="mt-5 text-xs leading-5 text-amber-800">
-                      Revele estes dados somente durante a conferência ou execução da operação.
-                    </p>
-                  </details>
+                  <RevealBankDataPanel
+                    protocol={protocolLabel}
+                    allowed={bankDataRevealAllowed}
+                  />
                 </>
               ) : (
                 <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
@@ -464,6 +448,27 @@ function formatFormalizationStatus(status: FormalizationStatus) {
   };
 
   return labels[status];
+}
+
+function maskHolderName(
+  value: string,
+) {
+  const parts =
+    value
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+
+  if (parts.length === 0) {
+    return '—';
+  }
+
+  return parts
+    .map(
+      (part) =>
+        `${part.charAt(0).toUpperCase()}***`,
+    )
+    .join(' ');
 }
 
 function maskFinancialValue(

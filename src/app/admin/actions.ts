@@ -13,10 +13,9 @@ export async function logoutAdmin() {
   if (token) {
     try {
       await deleteAdminSession(token);
-    } catch (error) {
+    } catch {
       console.error(
-        'Falha ao remover sessão administrativa.',
-        error instanceof Error ? error.message : 'Erro desconhecido',
+        'Falha ao remover sessão administrativa.'
       );
     }
   }

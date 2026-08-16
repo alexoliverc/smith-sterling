@@ -197,10 +197,7 @@ export async function decideOffer(
     }
 
     console.error(
-      'Falha ao registrar decisão pública da proposta.',
-      error instanceof Error
-        ? error.message
-        : 'Erro desconhecido',
+      'Falha ao registrar decisão pública da proposta.'
     );
 
     return {

@@ -68,12 +68,9 @@ export async function createCreditApplication(
       protocol:
         application.protocol,
     };
-  } catch (error) {
+  } catch {
     console.error(
-      'Falha ao criar solicitação.',
-      error instanceof Error
-        ? error.message
-        : 'Erro desconhecido',
+      'Falha ao criar solicitação.'
     );
 
     return {

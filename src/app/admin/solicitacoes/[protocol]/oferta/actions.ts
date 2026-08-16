@@ -589,10 +589,7 @@ export async function publishOffer(
     }
 
     console.error(
-      'Falha ao publicar proposta de crédito.',
-      error instanceof Error
-        ? error.message
-        : 'Erro desconhecido',
+      'Falha ao publicar proposta de crédito.'
     );
 
     return {
