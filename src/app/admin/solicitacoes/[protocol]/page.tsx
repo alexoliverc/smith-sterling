@@ -1,4 +1,7 @@
 import Link from 'next/link';
+
+import { AdminHeader } from '@/components/admin/admin-header';
+import { AdminOperationNav } from '@/components/admin/operation-nav';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
@@ -9,7 +12,6 @@ import type {
   ApplicationStatusActor,
 } from '@/generated/prisma/client';
 
-import { AdminLogoutButton } from '@/components/admin/logout-button';
 import { getApplicationStatusPresentation } from '@/lib/application-status';
 import { formatCurrency } from '@/lib/credit';
 import {
@@ -88,41 +90,10 @@ export default async function AdminApplicationPage({
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <header className="border-b border-white/10 bg-[#071522]">
-        <div className="mx-auto flex max-w-7xl flex-col items-start gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5">
-          <div className="flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-sm font-bold text-[#0b1f33]">
-              SS
-            </div>
-
-            <div>
-              <p className="font-semibold text-white">
-                Smith Sterling
-              </p>
-
-              <p className="text-xs text-slate-400">
-                Backoffice de crédito
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-sm font-medium text-white">
-                {session.user.name}
-              </p>
-
-              <p className="text-xs text-slate-400">
-                {formatRole(
-                  session.user.role,
-                )}
-              </p>
-            </div>
-
-            <AdminLogoutButton />
-          </div>
-        </div>
-      </header>
+      <AdminHeader
+        userName={session.user.name}
+        roleLabel={formatRole(session.user.role)}
+      />
 
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:py-12">
         <Link
@@ -131,6 +102,19 @@ export default async function AdminApplicationPage({
         >
           ← Voltar para solicitações
         </Link>
+
+        <AdminOperationNav
+          protocol={protocolLabel}
+          current="application"
+          offerAvailable={
+            session.user.role === 'SUPER_ADMIN' &&
+            application.status === 'APPROVED'
+          }
+          formalizationAvailable={
+            session.user.role === 'SUPER_ADMIN' &&
+            application.formalization !== null
+          }
+        />
 
         <div className="mt-8 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div>

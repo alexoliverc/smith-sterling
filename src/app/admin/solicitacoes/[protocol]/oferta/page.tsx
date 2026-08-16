@@ -1,11 +1,13 @@
 import Link from 'next/link';
+
+import { AdminHeader } from '@/components/admin/admin-header';
+import { AdminOperationNav } from '@/components/admin/operation-nav';
 import { cookies } from 'next/headers';
 import {
   notFound,
   redirect,
 } from 'next/navigation';
 
-import { AdminLogoutButton } from '@/components/admin/logout-button';
 import {
   ADMIN_SESSION_COOKIE,
   findAdminSession,
@@ -146,39 +148,10 @@ export default async function AdminCreditOfferPage({
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <header className="border-b border-white/10 bg-[#071522]">
-        <div className="mx-auto flex max-w-7xl flex-col items-start gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5">
-          <div className="flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-sm font-bold text-[#0b1f33]">
-              SS
-            </div>
-
-            <div>
-              <p className="font-semibold text-white">
-                Smith Sterling
-              </p>
-
-              <p className="text-xs text-slate-400">
-                Backoffice de crédito
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-sm font-medium text-white">
-                {session.user.name}
-              </p>
-
-              <p className="text-xs text-slate-400">
-                Super administrador
-              </p>
-            </div>
-
-            <AdminLogoutButton />
-          </div>
-        </div>
-      </header>
+      <AdminHeader
+        userName={session.user.name}
+        roleLabel="Super administrador"
+      />
 
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:py-12">
         <Link
@@ -189,6 +162,15 @@ export default async function AdminCreditOfferPage({
         >
           ← Voltar para a solicitação
         </Link>
+
+        <AdminOperationNav
+          protocol={protocolLabel}
+          current="offer"
+          offerAvailable
+          formalizationAvailable={
+            acceptedOffer !== null
+          }
+        />
 
         <div className="mt-8">
           <p className="text-sm font-semibold uppercase tracking-[0.14em] text-blue-600">

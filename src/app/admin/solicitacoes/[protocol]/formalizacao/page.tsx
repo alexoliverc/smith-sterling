@@ -1,4 +1,7 @@
 import Link from 'next/link';
+
+import { AdminHeader } from '@/components/admin/admin-header';
+import { AdminOperationNav } from '@/components/admin/operation-nav';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
@@ -52,7 +55,7 @@ export default async function AdminFormalizationPage({ params }: AdminFormalizat
             href={`/admin/solicitacoes/${encodeURIComponent(protocol)}`}
             className="text-sm font-semibold text-blue-600"
           >
-            ← Voltar para a proposta
+            ← Voltar para a solicitação
           </Link>
 
           <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
@@ -78,29 +81,28 @@ export default async function AdminFormalizationPage({ params }: AdminFormalizat
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <header className="bg-[#071522]">
-        <div className="mx-auto flex max-w-6xl flex-col items-start gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5">
-          <div>
-            <p className="font-semibold text-white">Smith Sterling</p>
-
-            <p className="text-xs text-slate-400">Conferência da formalização</p>
-          </div>
-
-          <div className="text-right">
-            <p className="text-sm font-medium text-white">{session.user.name}</p>
-
-            <p className="text-xs text-slate-400">Super administrador</p>
-          </div>
-        </div>
-      </header>
+      <AdminHeader
+        userName={session.user.name}
+        roleLabel="Super administrador"
+        subtitle="Conferência da formalização"
+        maxWidth="6xl"
+      />
 
       <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
         <Link
           href={`/admin/solicitacoes/${encodeURIComponent(protocol)}`}
           className="text-sm font-semibold text-blue-600 hover:text-blue-700"
         >
-          ← Voltar para a proposta
+          ← Voltar para a solicitação
         </Link>
+        <AdminOperationNav
+          protocol={protocolLabel}
+          current="formalization"
+          offerAvailable={
+            application.status === 'APPROVED'
+          }
+          formalizationAvailable
+        />
 
         <div className="mt-8 flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <div>
