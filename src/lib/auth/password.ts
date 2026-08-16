@@ -1,7 +1,10 @@
 import 'server-only';
 
 import {
-  argon2,
+  argon2id,
+} from 'hash-wasm';
+
+import {
   randomBytes,
   timingSafeEqual,
 } from 'node:crypto';
@@ -48,57 +51,39 @@ const PASSWORD_VERIFICATION_PLACEHOLDER =
     '$',
   );
 
-function derivePasswordKey(
+async function derivePasswordKey(
   password:
     string,
 
   salt:
     Buffer,
 ): Promise<Buffer> {
-  return new Promise(
-    (
-      resolve,
-      reject,
-    ) => {
-      argon2(
-        'argon2id',
-        {
-          message:
-            password,
+  const derivedKey =
+    await argon2id(
+      {
+        password,
 
-          nonce:
-            salt,
+        salt,
 
-          parallelism:
-            PARALLELISM,
+        parallelism:
+          PARALLELISM,
 
-          tagLength:
-            TAG_LENGTH,
+        iterations:
+          PASSES,
 
-          memory:
-            MEMORY,
+        memorySize:
+          MEMORY,
 
-          passes:
-            PASSES,
-        },
-        (
-          error,
-          derivedKey,
-        ) => {
-          if (error) {
-            reject(
-              error,
-            );
+        hashLength:
+          TAG_LENGTH,
 
-            return;
-          }
+        outputType:
+          'binary',
+      },
+    );
 
-          resolve(
-            derivedKey,
-          );
-        },
-      );
-    },
+  return Buffer.from(
+    derivedKey,
   );
 }
 
