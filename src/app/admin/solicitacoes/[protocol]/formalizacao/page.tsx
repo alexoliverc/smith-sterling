@@ -47,37 +47,55 @@ export default async function AdminFormalizationPage({ params }: AdminFormalizat
     notFound();
   }
 
+  const protocolLabel =
+    application.publicProtocol ??
+    protocol;
+
   if (!application.formalization) {
     return (
-      <main className="min-h-screen bg-slate-50 px-6 py-12">
-        <div className="mx-auto max-w-4xl">
+      <main className="min-h-screen bg-slate-50">
+        <AdminHeader
+          userName={session.user.name}
+          roleLabel="Super administrador"
+          subtitle="Conferência da formalização"
+          maxWidth="6xl"
+        />
+
+        <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
           <Link
-            href={`/admin/solicitacoes/${encodeURIComponent(protocol)}`}
-            className="text-sm font-semibold text-blue-600"
+            href={`/admin/solicitacoes/${encodeURIComponent(
+              protocolLabel,
+            )}`}
+            className="text-sm font-semibold text-blue-600 hover:text-blue-700"
           >
             ← Voltar para a solicitação
           </Link>
 
-          <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-            <h1 className="text-2xl font-semibold text-[#071522]">Formalização não encontrada</h1>
+          <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-600">
+              Formalização
+            </p>
 
-            <p className="mt-3 text-slate-600">
-              Esta proposta ainda não possui uma formalização associada.
+            <h1 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#071522]">
+              Formalização ainda não disponível
+            </h1>
+
+            <p className="mt-3 max-w-2xl leading-7 text-slate-600">
+              Esta operação ainda não possui uma formalização associada. Retorne à solicitação para consultar o estágio operacional atual.
             </p>
           </div>
-        </div>
+        </section>
       </main>
     );
   }
 
-  const formalization = application.formalization;
+  const formalization =
+    application.formalization;
 
   const isHistoricalWithoutOffer =
     formalization.acceptedOfferId === null &&
     (formalization.status === 'DISBURSED' ||
       formalization.status === 'CANCELLED');
-
-  const protocolLabel = application.publicProtocol ?? protocol;
 
   return (
     <main className="min-h-screen bg-slate-50">
