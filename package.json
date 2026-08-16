@@ -16,7 +16,9 @@
     "test:watch": "vitest",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "prestart": "node --conditions=react-server --import=tsx scripts/validate-runtime-env.ts",
-    "prebuild": "prisma generate"
+    "prebuild": "prisma generate",
+    "db:readiness": "node --conditions=react-server --import=tsx scripts/db-readiness.ts",
+    "staging:preflight": "npm run prestart && prisma migrate status && npm run db:readiness"
   },
   "keywords": [],
   "author": "",
