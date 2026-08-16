@@ -1,8 +1,7 @@
 import 'server-only';
 
-import * as argon2 from 'argon2';
-
 import {
+  argon2,
   randomBytes,
   timingSafeEqual,
 } from 'node:crypto';
@@ -21,9 +20,6 @@ const TAG_LENGTH =
 
 const SALT_LENGTH =
   16;
-
-const ARGON2_VERSION =
-  0x13;
 
 /*
  * Hash sintaticamente válido usado somente
@@ -52,44 +48,57 @@ const PASSWORD_VERIFICATION_PLACEHOLDER =
     '$',
   );
 
-async function derivePasswordKey(
+function derivePasswordKey(
   password:
     string,
 
   salt:
     Buffer,
 ): Promise<Buffer> {
-  const derivedKey =
-    await argon2.hash(
-      password,
-      {
-        type:
-          argon2.argon2id,
+  return new Promise(
+    (
+      resolve,
+      reject,
+    ) => {
+      argon2(
+        'argon2id',
+        {
+          message:
+            password,
 
-        memoryCost:
-          MEMORY,
+          nonce:
+            salt,
 
-        timeCost:
-          PASSES,
+          parallelism:
+            PARALLELISM,
 
-        parallelism:
-          PARALLELISM,
+          tagLength:
+            TAG_LENGTH,
 
-        hashLength:
-          TAG_LENGTH,
+          memory:
+            MEMORY,
 
-        salt,
+          passes:
+            PASSES,
+        },
+        (
+          error,
+          derivedKey,
+        ) => {
+          if (error) {
+            reject(
+              error,
+            );
 
-        raw:
-          true,
+            return;
+          }
 
-        version:
-          ARGON2_VERSION,
-      },
-    );
-
-  return Buffer.from(
-    derivedKey,
+          resolve(
+            derivedKey,
+          );
+        },
+      );
+    },
   );
 }
 
