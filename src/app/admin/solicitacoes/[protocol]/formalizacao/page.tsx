@@ -79,7 +79,7 @@ export default async function AdminFormalizationPage({ params }: AdminFormalizat
   return (
     <main className="min-h-screen bg-slate-50">
       <header className="bg-[#071522]">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
+        <div className="mx-auto flex max-w-6xl flex-col items-start gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5">
           <div>
             <p className="font-semibold text-white">Smith Sterling</p>
 
@@ -94,7 +94,7 @@ export default async function AdminFormalizationPage({ params }: AdminFormalizat
         </div>
       </header>
 
-      <section className="mx-auto max-w-6xl px-6 py-10">
+      <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
         <Link
           href={`/admin/solicitacoes/${encodeURIComponent(protocol)}`}
           className="text-sm font-semibold text-blue-600 hover:text-blue-700"

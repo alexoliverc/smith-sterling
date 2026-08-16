@@ -89,7 +89,7 @@ export default async function AdminApplicationPage({
   return (
     <main className="min-h-screen bg-slate-50">
       <header className="border-b border-white/10 bg-[#071522]">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-5">
+        <div className="mx-auto flex max-w-7xl flex-col items-start gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5">
           <div className="flex items-center gap-4">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-sm font-bold text-[#0b1f33]">
               SS
@@ -124,7 +124,7 @@ export default async function AdminApplicationPage({
         </div>
       </header>
 
-      <section className="mx-auto max-w-7xl px-6 py-10 md:py-12">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:py-12">
         <Link
           href="/admin/solicitacoes"
           className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 transition hover:text-blue-700"
@@ -147,7 +147,7 @@ export default async function AdminApplicationPage({
             </p>
           </div>
 
-          <div className="min-w-52 rounded-2xl border border-slate-200 bg-white px-6 py-5 shadow-sm">
+          <div className="w-full rounded-2xl border border-slate-200 bg-white px-6 py-5 shadow-sm lg:w-auto lg:min-w-52">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
               Status da análise
             </p>

@@ -562,7 +562,7 @@ function OfferRow({
   strong?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between gap-6 px-5 py-4">
+    <div className="flex flex-col items-start gap-1 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
       <dt className="text-sm text-slate-500">
         {label}
       </dt>
@@ -570,8 +570,8 @@ function OfferRow({
       <dd
         className={
           strong
-            ? 'text-right text-sm font-bold text-[#071522]'
-            : 'text-right text-sm font-semibold text-slate-700'
+            ? 'text-left text-sm font-bold text-[#071522] sm:text-right'
+            : 'text-left text-sm font-semibold text-slate-700 sm:text-right'
         }
       >
         {value}

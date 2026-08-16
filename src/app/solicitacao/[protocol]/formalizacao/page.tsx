@@ -355,7 +355,7 @@ function DisbursedState({ date }: { date: Date | null }) {
       />
 
       <div className="mt-8 rounded-3xl border border-emerald-200 bg-emerald-50 p-6 md:p-8">
-        <div className="flex gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-lg font-bold text-white">
             ✓
           </div>
