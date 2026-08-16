@@ -18,7 +18,8 @@
     "prestart": "node --conditions=react-server --import=tsx scripts/validate-runtime-env.ts",
     "prebuild": "prisma generate",
     "db:readiness": "node --conditions=react-server --import=tsx scripts/db-readiness.ts",
-    "staging:preflight": "npm run prestart && prisma migrate status && npm run db:readiness"
+    "staging:preflight": "npm run prestart && prisma migrate status && npm run db:readiness",
+    "production:readiness": "node --conditions=react-server --import=tsx scripts/production-readiness.ts"
   },
   "keywords": [],
   "author": "",
