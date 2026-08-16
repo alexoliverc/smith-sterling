@@ -21,6 +21,11 @@ export const metadata: Metadata = {
 };
 
 export default function TermsPage() {
+  const legalName =
+    institution.legalNameIsPlaceholder
+      ? null
+      : institution.legalName;
+
   const document =
     institution.document.isPlaceholder
       ? null
@@ -64,9 +69,15 @@ export default function TermsPage() {
           </p>
 
           <div className="mt-4 rounded-2xl bg-slate-50 p-5">
-            <p className="font-semibold text-[#0b1f33]">
-              {institution.legalName}
-            </p>
+            {legalName ? (
+              <p className="font-semibold text-[#0b1f33]">
+                {legalName}
+              </p>
+            ) : (
+              <p className="font-semibold text-[#0b1f33]">
+                Identificação jurídica definitiva em configuração
+              </p>
+            )}
 
             {document && (
               <p className="mt-1">

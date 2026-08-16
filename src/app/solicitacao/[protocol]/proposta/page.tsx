@@ -92,6 +92,7 @@ export default async function PublicCreditOfferPage({
   }
 
   const institutionalIdentityReady =
+    !institution.legalNameIsPlaceholder &&
     !institution.document.isPlaceholder &&
     !institution.address.isPlaceholder &&
     !institution.support.emailIsPlaceholder;

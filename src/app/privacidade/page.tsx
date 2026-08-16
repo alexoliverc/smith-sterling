@@ -21,6 +21,11 @@ export const metadata: Metadata = {
 };
 
 export default function PrivacyPage() {
+  const legalName =
+    institution.legalNameIsPlaceholder
+      ? null
+      : institution.legalName;
+
   const privacyEmail =
     institution.privacy.emailIsPlaceholder
       ? null
@@ -69,9 +74,15 @@ export default function PrivacyPage() {
           </p>
 
           <div className="mt-4 rounded-2xl bg-slate-50 p-5">
-            <p className="font-semibold text-[#0b1f33]">
-              {institution.legalName}
-            </p>
+            {legalName ? (
+              <p className="font-semibold text-[#0b1f33]">
+                {legalName}
+              </p>
+            ) : (
+              <p className="font-semibold text-[#0b1f33]">
+                Identificação jurídica definitiva em configuração
+              </p>
+            )}
 
             <p className="mt-1">
               Nome de uso: {institution.tradeName}

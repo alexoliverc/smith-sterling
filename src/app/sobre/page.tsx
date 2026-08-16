@@ -53,13 +53,21 @@ export default function AboutPage() {
             Estrutura regulatória
           </h2>
 
-          <p className="mt-3 leading-7">
-            Modelo pretendido: {institution.regulatory.intendedModel}.
-          </p>
+          {institution.regulatory.authorizationConfirmed ? (
+            <>
+              <p className="mt-3 leading-7">
+                Modelo regulatório: {institution.regulatory.intendedModel}.
+              </p>
 
-          <p className="mt-2 text-sm leading-6 text-slate-500">
-            {institution.regulatory.status}.
-          </p>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                {institution.regulatory.status}.
+              </p>
+            </>
+          ) : (
+            <p className="mt-3 leading-7">
+              As informações regulatórias definitivas ainda não estão confirmadas para publicação.
+            </p>
+          )}
         </div>
       </div>
     </InstitutionalPage>
