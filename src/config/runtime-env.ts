@@ -1,4 +1,4 @@
-import { hasProductionInstitutionalData } from '@/config/institution';
+import { getProductionInstitutionalReadiness } from '@/config/institution';
 
 const APP_ENVIRONMENTS = [
   'local',
@@ -149,12 +149,16 @@ export function validateRuntimeEnvironment() {
   }
 
   if (
-    appEnvironment === 'production' &&
-    !hasProductionInstitutionalData()
+    appEnvironment === 'production'
   ) {
-    throw new Error(
-      'Inicialização de produção bloqueada: os dados institucionais ainda não estão prontos para publicação.',
-    );
+    const institutionalReadiness =
+      getProductionInstitutionalReadiness();
+
+    if (!institutionalReadiness.ready) {
+      throw new Error(
+        `Inicialização de produção bloqueada: requisitos institucionais pendentes: ${institutionalReadiness.missingRequirements.join(', ')}.`,
+      );
+    }
   }
 
   return {

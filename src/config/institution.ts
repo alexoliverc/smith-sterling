@@ -1,6 +1,8 @@
 export const institution = {
   legalName:
     'Smith Sterling Crédito Digital Ltda.',
+  legalNameIsPlaceholder:
+    true,
 
   tradeName:
     'Smith Sterling',
@@ -70,15 +72,77 @@ export const institution = {
   },
 } as const;
 
+export const productionInstitutionalRequirements = [
+  {
+    code: 'LEGAL_NAME',
+    ready:
+      !institution.legalNameIsPlaceholder,
+  },
+  {
+    code: 'DOCUMENT',
+    ready:
+      !institution.document.isPlaceholder,
+  },
+  {
+    code: 'ADDRESS',
+    ready:
+      !institution.address.isPlaceholder,
+  },
+  {
+    code: 'SUPPORT_EMAIL',
+    ready:
+      !institution.support.emailIsPlaceholder,
+  },
+  {
+    code: 'SUPPORT_PHONE',
+    ready:
+      !institution.support.phoneIsPlaceholder,
+  },
+  {
+    code: 'SUPPORT_HOURS',
+    ready:
+      !institution.support.hoursIsPlaceholder,
+  },
+  {
+    code: 'PRIVACY_EMAIL',
+    ready:
+      !institution.privacy.emailIsPlaceholder,
+  },
+  {
+    code: 'PRIVACY_OFFICER',
+    ready:
+      !institution.privacy.officerIsPlaceholder,
+  },
+  {
+    code: 'REGULATORY_AUTHORIZATION',
+    ready:
+      institution.regulatory.authorizationConfirmed,
+  },
+] as const;
+
+export type ProductionInstitutionalRequirementCode =
+  (typeof productionInstitutionalRequirements)[number]['code'];
+
+export function getProductionInstitutionalReadiness() {
+  const missingRequirements =
+    productionInstitutionalRequirements
+      .filter(
+        (requirement) =>
+          !requirement.ready,
+      )
+      .map(
+        (requirement) =>
+          requirement.code,
+      );
+
+  return {
+    ready:
+      missingRequirements.length === 0,
+
+    missingRequirements,
+  };
+}
+
 export function hasProductionInstitutionalData() {
-  return (
-    !institution.document.isPlaceholder &&
-    !institution.address.isPlaceholder &&
-    !institution.support.emailIsPlaceholder &&
-    !institution.support.phoneIsPlaceholder &&
-    !institution.support.hoursIsPlaceholder &&
-    !institution.privacy.emailIsPlaceholder &&
-    !institution.privacy.officerIsPlaceholder &&
-    institution.regulatory.authorizationConfirmed
-  );
+  return getProductionInstitutionalReadiness().ready;
 }
