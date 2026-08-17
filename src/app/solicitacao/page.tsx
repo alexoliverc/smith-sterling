@@ -1,3 +1,5 @@
+import { FunnelEventBeacon } from '@/components/analytics/funnel-event-beacon';
+import { FUNNEL_EVENTS } from '@/lib/analytics/funnel-events';
 import Link from 'next/link';
 
 import {
@@ -119,6 +121,12 @@ export default async function SolicitationPage({
       </header>
 
       <div className="mx-auto grid max-w-6xl gap-10 px-6 py-12 lg:grid-cols-[1fr_360px]">
+        <FunnelEventBeacon
+          event={FUNNEL_EVENTS.applicationStart}
+          parameters={{
+            funnel_stage: 'application_start',
+          }}
+        />
         <ApplicationWizard
           amount={amount}
           months={months}

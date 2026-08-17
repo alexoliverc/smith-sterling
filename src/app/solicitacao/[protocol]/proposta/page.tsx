@@ -1,3 +1,5 @@
+import { FunnelEventBeacon } from '@/components/analytics/funnel-event-beacon';
+import { FUNNEL_EVENTS } from '@/lib/analytics/funnel-events';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -109,6 +111,39 @@ export default async function PublicCreditOfferPage({
         protocolLabel
       }
     >
+      {offer.status === 'PRESENTED' &&
+        !effectivelyExpired && (
+          <FunnelEventBeacon
+            event={FUNNEL_EVENTS.offerView}
+            dedupeKey={`${protocolLabel}:${offer.version}:PRESENTED`}
+            parameters={{
+              funnel_stage: 'offer',
+              offer_status: 'presented',
+            }}
+          />
+        )}
+
+      {offer.status === 'ACCEPTED' && (
+        <FunnelEventBeacon
+          event={FUNNEL_EVENTS.offerAccepted}
+          dedupeKey={`${protocolLabel}:ACCEPTED`}
+          parameters={{
+            funnel_stage: 'offer',
+            offer_status: 'accepted',
+          }}
+        />
+      )}
+
+      {offer.status === 'DECLINED' && (
+        <FunnelEventBeacon
+          event={FUNNEL_EVENTS.offerDeclined}
+          dedupeKey={`${protocolLabel}:${offer.version}:DECLINED`}
+          parameters={{
+            funnel_stage: 'offer',
+            offer_status: 'declined',
+          }}
+        />
+      )}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm md:p-9">
           <div className="flex flex-col gap-5 border-b border-slate-100 pb-7 sm:flex-row sm:items-start sm:justify-between">

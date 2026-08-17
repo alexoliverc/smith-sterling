@@ -1,3 +1,5 @@
+import { FunnelEventBeacon } from '@/components/analytics/funnel-event-beacon';
+import { FUNNEL_EVENTS } from '@/lib/analytics/funnel-events';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -53,6 +55,57 @@ export default async function FormalizationPage({ params }: FormalizationPagePro
 
   return (
     <main className="min-h-screen bg-[#f5f7fa]">
+      {!isHistoricalWithoutOffer &&
+        bankDataReceived && (
+          <FunnelEventBeacon
+            event={FUNNEL_EVENTS.bankDetailsSubmitted}
+            dedupeKey={`${protocol}:BANK_DETAILS_SUBMITTED`}
+            parameters={{
+              funnel_stage: 'formalization',
+            }}
+          />
+        )}
+      {!isHistoricalWithoutOffer &&
+        formalization.status === 'READY_FOR_DISBURSEMENT' && (
+          <FunnelEventBeacon
+            event={FUNNEL_EVENTS.readyForDisbursement}
+            dedupeKey={`${protocol}:READY_FOR_DISBURSEMENT`}
+            parameters={{
+              funnel_stage: 'disbursement',
+              formalization_status: 'ready',
+            }}
+          />
+        )}
+      {!isHistoricalWithoutOffer &&
+        formalization.status === 'DISBURSED' && (
+          <FunnelEventBeacon
+            event={FUNNEL_EVENTS.disbursed}
+            dedupeKey={`${protocol}:DISBURSED`}
+            parameters={{
+              funnel_stage: 'disbursement',
+              formalization_status: 'completed',
+            }}
+          />
+        )}
+      {!isHistoricalWithoutOffer && (
+        <FunnelEventBeacon
+          event={FUNNEL_EVENTS.formalizationView}
+          dedupeKey={`${protocol}:FORMALIZATION_VIEW`}
+          parameters={{
+            funnel_stage: 'formalization',
+          }}
+        />
+      )}
+      {!isHistoricalWithoutOffer && (
+        <FunnelEventBeacon
+          event={FUNNEL_EVENTS.offerAccepted}
+          dedupeKey={`${protocol}:ACCEPTED`}
+          parameters={{
+            funnel_stage: 'offer',
+            offer_status: 'accepted',
+          }}
+        />
+      )}
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
           <Link href="/" className="flex items-center gap-3">

@@ -1,3 +1,5 @@
+import { FunnelEventBeacon } from '@/components/analytics/funnel-event-beacon';
+import { FUNNEL_EVENTS } from '@/lib/analytics/funnel-events';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -33,9 +35,19 @@ export default async function AnalysisPage({ params }: AnalysisPageProps) {
   }
 
   const presentation = getStatusPresentation(application.status);
+  const analysisTracking = getAnalysisTracking(application.status);
 
   return (
     <main className="min-h-screen bg-[#f5f7fa]">
+      {analysisTracking && (
+        <FunnelEventBeacon
+          event={analysisTracking.event}
+          dedupeKey={`${protocol}:${analysisTracking.dedupeKey}`}
+          parameters={{
+            funnel_stage: 'analysis',
+          }}
+        />
+      )}
       <AutoStatusRefresh
       active={
         application.status ===
@@ -457,6 +469,33 @@ function getCurrentStep(status: ApplicationStatus) {
   }
 }
 
+function getAnalysisTracking(
+  status: ApplicationStatus,
+) {
+  switch (status) {
+    case 'SUBMITTED':
+      return {
+        event: FUNNEL_EVENTS.analysisSubmitted,
+        dedupeKey: 'SUBMITTED',
+      };
+
+    case 'UNDER_REVIEW':
+      return {
+        event: FUNNEL_EVENTS.analysisUnderReview,
+        dedupeKey: 'UNDER_REVIEW',
+      };
+
+    case 'APPROVED':
+    case 'REJECTED':
+      return {
+        event: FUNNEL_EVENTS.analysisCompleted,
+        dedupeKey: 'COMPLETED',
+      };
+
+    default:
+      return null;
+  }
+}
 function getStatusPresentation(status: ApplicationStatus) {
   switch (status) {
     case 'DRAFT':
