@@ -5,8 +5,10 @@ import { useEffect, useRef } from 'react';
 import {
   pushFunnelEvent,
   pushFunnelEventOnce,
-  type FunnelEventName,
-  type FunnelEventParameters,
+} from '@/lib/analytics/funnel-event-client';
+import type {
+  FunnelEventName,
+  FunnelEventParameters,
 } from '@/lib/analytics/funnel-events';
 
 type FunnelEventBeaconProps = {
