@@ -40,6 +40,7 @@
   "dependencies": {
     "@hookform/resolvers": "^5.8.0",
     "@next/env": "^16.3.1",
+    "@next/third-parties": "^16.3.1",
     "@prisma/adapter-mariadb": "^7.9.1",
     "@prisma/client": "^7.9.1",
     "dotenv": "^17.4.2",

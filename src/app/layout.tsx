@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import { GoogleTagManager } from '@next/third-parties/google';
 import './globals.css';
 
 const inter = Inter({
@@ -19,6 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" data-scroll-behavior="smooth">
+      <GoogleTagManager gtmId="GTM-K4LWQKTM" />
       <body className={inter.className}>{children}</body>
     </html>
   );
