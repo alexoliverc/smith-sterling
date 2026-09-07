@@ -9,6 +9,10 @@ O roadmap original, relatado como aproximadamente 130 fases, ainda não foi enco
 - `IN_PROGRESS` — Existe `ops/phase-60-disaster-recovery` em `02c4997`, branch não mesclada que adiciona runbooks de backup e disaster recovery.
 - `UNKNOWN` — Não há fonte verificável para fases 1–59, fase 61, fases seguintes ou para o checkpoint relatado em 2026-08-22.
 
+## Busca de fontes primárias
+
+Em 2026-09-07 foram verificados Git, branches remotas, PRs, issues, milestones, tags e releases públicos. Foram encontrados 124 commits acessíveis e uma PR mesclada com 96 commits, mas nenhum roadmap de fases. Consulte `COMMIT_TIMELINE.md` para a linha do tempo técnica, que não substitui o plano.
+
 ## Procedimento
 
 1. Recuperar o plano original da fonte primária.

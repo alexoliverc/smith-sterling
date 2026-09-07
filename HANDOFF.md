@@ -20,6 +20,6 @@
 
 ## Próxima ação segura
 
-Recuperar o roadmap original e sua fonte (documento, issue tracker ou exportação), relacionar as fases aos commits existentes e decidir explicitamente o destino da branch de disaster recovery.
+Recuperar o roadmap original fora dos metadados públicos já verificados — por exemplo, documento, exportação, histórico de outra ferramenta ou registro de conversa —, relacionar as fases aos commits existentes e decidir explicitamente o destino da branch de disaster recovery.
 
 Use `HANDOFF_TEMPLATE.md` para a próxima troca de agente.

@@ -12,6 +12,8 @@
 
 `UNKNOWN` — Não há um documento versionado que ligue `main` a uma fase específica.
 
+`IMPLEMENTED` — A busca em GitHub em 2026-09-07 encontrou 124 commits e a PR nº 1 com 96 commits, porém nenhum milestone, tag, release ou issue que defina fases. A linha do tempo técnica está em `../../roadmap/COMMIT_TIMELINE.md`.
+
 `IN_PROGRESS` — Há uma branch não mesclada, `ops/phase-60-disaster-recovery`, no commit `02c4997`, com runbooks de backup e disaster recovery. Ela diverge de `main` após `3553ea5`; não é evidência de conclusão, merge ou fase atual.
 
 ## Próximo checkpoint desejado

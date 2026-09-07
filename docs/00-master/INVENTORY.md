@@ -12,6 +12,12 @@
 | Fase 60 de DR | `IN_PROGRESS` | branch `ops/phase-60-disaster-recovery`, sem merge |
 | Fase 61 em 2026-08-22 e ~130 fases | `UNKNOWN` | sem fonte recuperada no Git acessível |
 
+## Metadados GitHub recuperados
+
+- `IMPLEMENTED` — PR [#1](https://github.com/alexoliverc/smith-sterling/pull/1) foi mesclada em 2026-08-15 e contém 96 commits de implementação.
+- `IMPLEMENTED` — A consulta pública retornou zero milestones, zero tags, zero releases e nenhuma issue de roadmap; existe apenas a PR nº 1.
+- `UNKNOWN` — Projetos, documentos privados, conversas e outros sistemas externos que possam conter o plano original.
+
 ## Observação de conteúdo
 
 Há menções genéricas a seguro em páginas públicas de termos/contato, orientando que ele não pode ser condição do crédito. Isso não comprova funcionalidade de seguro, mas requer revisão editorial para garantir aderência à decisão de escopo do ADR-0002.
