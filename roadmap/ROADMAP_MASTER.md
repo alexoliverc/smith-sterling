@@ -19,3 +19,5 @@ Em 2026-09-07 foram verificados Git, branches remotas, PRs, issues, milestones, 
 2. Copiar IDs e títulos sem alteração para `PHASES.md`.
 3. Ligar cada fase a commits, testes, ADRs, artefatos e critérios de aceite apenas quando houver evidência.
 4. Atualizar `PHASE_STATUS.md` e `DEPENDENCY_MAP.md` mantendo lacunas como `UNKNOWN`.
+
+Use `RECOVERY_TEMPLATE.md` ao importar a fonte original.
