@@ -10,7 +10,7 @@
 
 ## Roadmap
 
-`UNKNOWN` — Não há um documento versionado que ligue `main` a uma fase específica.
+`IN_PROGRESS` — A fase 61 foi recuperada da conversa `CONECTIVIDADE GTM E ADS`. Ela trata da conectividade GTM/GA4 condicionada ao consentimento; o trecho disponível cobre 61.3B. Consulte `../../roadmap/phases/PHASE-061-GTM-ADS-CONNECTIVITY.md`.
 
 `IMPLEMENTED` — A busca em GitHub em 2026-09-07 encontrou 124 commits e a PR nº 1 com 96 commits, porém nenhum milestone, tag, release ou issue que defina fases. A linha do tempo técnica está em `../../roadmap/COMMIT_TIMELINE.md`.
 

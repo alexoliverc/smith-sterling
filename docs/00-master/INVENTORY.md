@@ -10,7 +10,8 @@
 | Produção bloqueada por requisitos institucionais | `IMPLEMENTED` | `src/config/institution.ts` e `src/config/runtime-env.ts` |
 | Dados e autorização oficiais | `IN_PROGRESS` | valores provisórios e `authorizationConfirmed: false` |
 | Fase 60 de DR | `IN_PROGRESS` | branch `ops/phase-60-disaster-recovery`, sem merge |
-| Fase 61 em 2026-08-22 e ~130 fases | `UNKNOWN` | sem fonte recuperada no Git acessível |
+| Fase 61 — conectividade GTM e Ads | `IN_PROGRESS` | conversa compartilhada `CONECTIVIDADE GTM E ADS`; subfase 61.3B registrada e reconciliada com o código |
+| Demais fases do roadmap (~130) | `UNKNOWN` | sem fonte recuperada no Git acessível |
 
 ## Metadados GitHub recuperados
 

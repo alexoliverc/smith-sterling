@@ -17,7 +17,8 @@ Atualizada em: 2026-09-07
 
 ## Estado ainda não comprovado
 
-- `UNKNOWN` — Repositório não traz o plano original completo de aproximadamente 130 fases nem evidência de checkpoint na fase 61 em 2026-08-22.
+- `IN_PROGRESS` — Fase 61 recuperada da conversa `CONECTIVIDADE GTM E ADS`: conectividade GTM/GA4 condicionada ao consentimento. O registro cobre 61.3B; Preview e publicação do container não foram comprovados.
+- `UNKNOWN` — Repositório não traz o plano original completo de aproximadamente 130 fases além da fonte recuperada para a fase 61.
 - `IN_PROGRESS` — A branch não mesclada `ops/phase-60-disaster-recovery` contém runbooks de backup/DR; merge, execução corrente e validade operacional devem ser confirmados.
 - `IN_PROGRESS` — Dados institucionais e autorização regulatória estão explicitamente provisórios/não confirmados no código; inicialização de produção é bloqueada.
 
