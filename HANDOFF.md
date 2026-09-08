@@ -12,6 +12,7 @@
 | Teste verificado | `npm test`: 29 arquivos, 142 testes aprovados em 2026-09-07 |
 | Fase 61 recuperada | `IMPLEMENTED` — subfase 61.3B de conectividade GTM e Ads; responsável confirmou Preview/Tag Assistant e publicação do container em 2026-09-07 |
 | Entrega integrada mais recente | `IMPLEMENTED` — PR #2: navegação reforçada nas fronteiras financeiras públicas |
+| Contexto para Gemini | `IMPLEMENTED` — `GEMINI.md` na raiz importa as regras e o estado de handoff para o Gemini Code Assist no VS Code |
 
 ## Pontos de atenção
 
