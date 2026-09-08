@@ -42,8 +42,8 @@ Esses identificadores não são segredos; não incluem credenciais nem permissõ
 
 - `IMPLEMENTED` — O código injeta o container GTM e define o consentimento padrão antes da interação do usuário em `src/app/layout.tsx`.
 - `IMPLEMENTED` — O banner grava a escolha em `smith_sterling_consent_v1`, emite `gtag('consent', 'update', ...)` e publica `smith_consent_update` com os estados de Analytics e Marketing em `src/components/consent/consent-banner.tsx`.
-- `IN_PROGRESS` — O registro confirma a criação/validação visual da variável e dos dois acionadores no GTM. A confirmação final de que ambos foram adicionados à Google Tag, salvos no container e testados não está presente no trecho fornecido.
-- `PLANNED` — Preview/Tag Assistant e publicação somente após os testes abaixo.
+- `IMPLEMENTED` — Em 2026-09-07, o responsável pelo projeto confirmou que os acionadores foram aplicados, o Preview/Tag Assistant foi validado para os três critérios de aceite abaixo e o container foi publicado.
+- `UNKNOWN` — A versão publicada do container, o ambiente e as capturas do Preview/Tag Assistant não foram anexados ao repositório.
 
 ## Critérios de aceite recuperados
 
@@ -55,9 +55,8 @@ Esses identificadores não são segredos; não incluem credenciais nem permissõ
 
 ## Pendências e riscos
 
-- `UNKNOWN` — Se a Google Tag recebeu os dois acionadores e foi salva no container.
-- `UNKNOWN` — Resultado do Preview/Tag Assistant para os três cenários.
-- `UNKNOWN` — Se o container foi publicado e qual versão foi publicada.
+- `UNKNOWN` — A versão publicada do container, o ambiente e o material visual dos testes não foram registrados em `evidence/analytics/`.
+- `PLANNED` — Executar também um teste explícito de revogação/recusa de Analytics como garantia adicional; ele não fez parte dos três critérios de aceite recuperados.
 - `UNKNOWN` — Configurações posteriores de Google Ads, conversões ou tags de marketing; elas não aparecem no material fornecido.
 
-Não publicar ou declarar Basic Consent Mode operacional sem evidência dos três cenários de aceite.
+`IMPLEMENTED` — A configuração recuperada para a subfase 61.3B foi confirmada pelo responsável e publicada. Evidências sem dados pessoais podem ser adicionadas posteriormente.

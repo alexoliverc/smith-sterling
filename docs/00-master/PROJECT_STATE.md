@@ -14,4 +14,4 @@ Avaliado em 2026-09-07, no commit `6b4bb20163bb3b65a82acf517a076aeb9a2ea9e6` de 
 | Produção | `IN_PROGRESS` | bloqueios explícitos para dados institucionais e autorização regulatória pendentes |
 | Autorização regulatória | `UNKNOWN` | código declara não confirmada; não há aprovação no repositório |
 | Roadmap ~130 fases | `UNKNOWN` | plano não localizado no Git acessível |
-| Fase 61 — conectividade GTM e Ads | `IN_PROGRESS` | conversa compartilhada recuperada; GTM/consentimento no código; Preview e publicação do container pendentes de evidência |
+| Fase 61 — conectividade GTM e Ads | `IMPLEMENTED` | conversa compartilhada recuperada; GTM/consentimento no código; responsável confirmou Preview/Tag Assistant e publicação em 2026-09-07; versão e capturas externas são `UNKNOWN` |

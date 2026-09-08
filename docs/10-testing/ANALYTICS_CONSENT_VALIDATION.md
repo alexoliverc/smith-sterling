@@ -4,13 +4,16 @@
 
 `IMPLEMENTED` — `npm test` passou no commit `39129c3` em 2026-09-07: 29 arquivos e 142 testes.
 
-## Validação externa pendente da fase 61
+## Validação externa da fase 61
 
-Execute em Preview/Tag Assistant do container GTM antes de publicar:
+`IMPLEMENTED` — Em 2026-09-07, o responsável pelo projeto confirmou em conversa que o Preview/Tag Assistant passou e que o container GTM foi publicado para os três critérios de aceite recuperados:
 
-1. Limpar o armazenamento local; visitar o site; confirmar que `GA4 | Etiqueta do Google | Smith Sterling` não dispara.
-2. Autorizar somente Analytics; confirmar emissão de `smith_consent_update`, `analytics_consent = granted` e disparo da Google Tag.
-3. Recarregar; confirmar que `JS | Analytics consent salvo` é verdadeiro e o acionador Initialization dispara a Google Tag.
-4. Revogar/recusar Analytics; confirmar que não há disparo em visita posterior.
+1. Sem consentimento, `GA4 | Etiqueta do Google | Smith Sterling` não dispara.
+2. Ao autorizar Analytics, ocorre `smith_consent_update` e a Google Tag dispara.
+3. Ao recarregar com Analytics autorizado, o acionador Initialization condicionado dispara a Google Tag.
 
-Registre data, versão do container GTM, ambiente, resultado e captura/URL de evidência em `evidence/analytics/` sem incluir dados pessoais.
+`UNKNOWN` — Não há versão do container, ambiente, captura ou URL do Preview/Tag Assistant armazenados no repositório.
+
+`PLANNED` — Validar explicitamente a revogação/recusa de Analytics em visita posterior. Essa verificação é recomendada como reforço e não pertence aos três critérios de aceite recuperados.
+
+Registre evidências futuras em `evidence/analytics/`, sem cookies, identificadores pessoais, capturas com dados de clientes ou credenciais.

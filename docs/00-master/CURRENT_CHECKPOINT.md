@@ -11,7 +11,7 @@
 
 ## Roadmap
 
-`IN_PROGRESS` — A fase 61 foi recuperada da conversa `CONECTIVIDADE GTM E ADS`. Ela trata da conectividade GTM/GA4 condicionada ao consentimento; o trecho disponível cobre 61.3B. Consulte `../../roadmap/phases/PHASE-061-GTM-ADS-CONNECTIVITY.md`.
+`IMPLEMENTED` — A subfase 61.3B foi recuperada da conversa `CONECTIVIDADE GTM E ADS`. Ela trata da conectividade GTM/GA4 condicionada ao consentimento. Em 2026-09-07, o responsável confirmou Preview/Tag Assistant aprovado e a publicação do container. A versão e as capturas permanecem `UNKNOWN`. Consulte `../../roadmap/phases/PHASE-061-GTM-ADS-CONNECTIVITY.md`.
 
 `IMPLEMENTED` — A busca em GitHub em 2026-09-07 encontrou 124 commits e a PR nº 1 com 96 commits, porém nenhum milestone, tag, release ou issue que defina fases. A linha do tempo técnica está em `../../roadmap/COMMIT_TIMELINE.md`.
 
@@ -21,4 +21,4 @@
 
 ## Próximo checkpoint desejado
 
-Associar o plano original às evidências de Git e registrar: fase, objetivo, dependências, critério de aceite, commits, testes e pendências.
+Recuperar o plano original e associar suas fases às evidências de Git: fase, objetivo, dependências, critério de aceite, commits, testes e pendências. Como reforço não bloqueador, anexar versão e capturas da validação da fase 61.

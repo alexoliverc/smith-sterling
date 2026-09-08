@@ -7,7 +7,8 @@ O roadmap original, relatado como aproximadamente 130 fases, ainda não foi enco
 ## Evidência disponível
 
 - `IN_PROGRESS` — Existe `ops/phase-60-disaster-recovery` em `02c4997`, branch não mesclada que adiciona runbooks de backup e disaster recovery.
-- `UNKNOWN` — Não há fonte verificável para fases 1–59, fase 61, fases seguintes ou para o checkpoint relatado em 2026-08-22.
+- `IMPLEMENTED` — A subfase 61.3B da fase 61 foi recuperada, validada e publicada conforme confirmação do responsável em 2026-09-07. A versão e os artefatos visuais externos permanecem `UNKNOWN`.
+- `UNKNOWN` — Não há fonte verificável para fases 1–59, para a parcela da fase 61 além da subfase 61.3B, para fases seguintes ou para o checkpoint relatado em 2026-08-22.
 
 ## Busca de fontes primárias
 
