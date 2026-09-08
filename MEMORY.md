@@ -16,12 +16,13 @@ Atualizada em: 2026-09-07
 - `IMPLEMENTED` — Fluxos públicos e administrativos de crédito são materializados em `src/app/`, workflows em `src/server/workflows/`, DAL em `src/server/dal/` e esquema Prisma em `prisma/schema.prisma`.
 - `IMPLEMENTED` — Verificação em cópia limpa do commit `39129c3`: `npm test` passou com 29 arquivos e 142 testes em 2026-09-07.
 - `IMPLEMENTED` — Validações de runtime, cabeçalhos de segurança, sessões administrativas e proteção de PII existem no código. Cobertura, eficácia operacional e ambiente produtivo permanecem `UNKNOWN`.
+- `IMPLEMENTED` — Runbooks de backup e disaster recovery foram mesclados em `main` no commit `453c953` a partir de `ops/phase-60-disaster-recovery` (`docs/operations/backup-policy.md` e `docs/operations/disaster-recovery.md`). O primeiro restore drill em 16/08/2026 está documentado.
 
 ## Estado ainda não comprovado
 
 - `UNKNOWN` — O registro da fase 61 cobre explicitamente 61.3B; eventual escopo adicional da fase não foi recuperado.
 - `UNKNOWN` — Repositório não traz o plano original completo de aproximadamente 130 fases além da fonte recuperada para a fase 61.
-- `IN_PROGRESS` — A branch não mesclada `ops/phase-60-disaster-recovery` contém runbooks de backup/DR; merge, execução corrente e validade operacional devem ser confirmados.
+- `UNKNOWN` — A rotina recorrente periódica de testes de restauração em produção e o escopo formal da fase 60 no roadmap original.
 - `IN_PROGRESS` — Dados institucionais e autorização regulatória estão explicitamente provisórios/não confirmados no código; inicialização de produção é bloqueada.
 
 Notas cronológicas estão em `memory/`.
