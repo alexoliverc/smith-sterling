@@ -1,3 +1,4 @@
+import { HardBoundaryLink } from '@/components/navigation/hard-boundary-link';
 import Link from 'next/link';
 
 export function Header() {
@@ -52,15 +53,15 @@ export function Header() {
             Contato
           </Link>
 
-          <Link
+          <HardBoundaryLink
             href="/acompanhar"
             className="text-sm font-medium text-slate-600 transition hover:text-slate-950"
           >
             Acompanhar
-          </Link>
+          </HardBoundaryLink>
         </nav>
 
-        <Link
+        <HardBoundaryLink
           href="/solicitacao"
           className="shrink-0 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 sm:px-5"
         >
@@ -71,7 +72,7 @@ export function Header() {
           <span className="hidden sm:inline">
             Solicitar crédito
           </span>
-        </Link>
+        </HardBoundaryLink>
       </div>
     </header>
   );
