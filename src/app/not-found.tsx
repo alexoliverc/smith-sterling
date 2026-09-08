@@ -1,3 +1,4 @@
+import { HardBoundaryLink } from '@/components/navigation/hard-boundary-link';
 import Link from 'next/link';
 
 export default function NotFound() {
@@ -52,12 +53,12 @@ export default function NotFound() {
               Voltar ao início
             </Link>
 
-            <Link
+            <HardBoundaryLink
               href="/acompanhar"
               className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
             >
               Acompanhar solicitação
-            </Link>
+            </HardBoundaryLink>
           </div>
         </div>
       </section>

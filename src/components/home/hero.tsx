@@ -1,6 +1,7 @@
 'use client';
 
-import Link from 'next/link';
+import { HardBoundaryLink } from '@/components/navigation/hard-boundary-link';
+
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
@@ -78,12 +79,12 @@ export function Hero() {
               Simular meu crédito
             </a>
 
-            <Link
+            <HardBoundaryLink
               href="/acompanhar"
               className="rounded-xl border border-slate-300 bg-white px-7 py-4 text-center text-base font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
             >
               Já tenho uma solicitação
-            </Link>
+            </HardBoundaryLink>
           </div>
 
           <div className="mt-6">
@@ -266,12 +267,12 @@ export function Hero() {
                 Já iniciou o processo?
               </p>
 
-              <Link
+              <HardBoundaryLink
                 href="/acompanhar"
                 className="mt-2 inline-flex text-sm font-semibold text-blue-600 transition hover:text-blue-700"
               >
                 Consultar minha solicitação →
-              </Link>
+              </HardBoundaryLink>
             </div>
           </div>
         </div>

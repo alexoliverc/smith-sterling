@@ -1,3 +1,4 @@
+import { HardBoundaryLink } from '@/components/navigation/hard-boundary-link';
 import Link from 'next/link';
 
 export function Footer() {
@@ -45,12 +46,12 @@ export function Footer() {
                 Contato
               </Link>
 
-              <Link
+              <HardBoundaryLink
                 href="/acompanhar"
                 className="transition hover:text-slate-900"
               >
                 Acompanhar solicitação
-              </Link>
+              </HardBoundaryLink>
             </div>
           </div>
 

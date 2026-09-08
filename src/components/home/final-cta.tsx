@@ -1,3 +1,4 @@
+import { HardBoundaryLink } from '@/components/navigation/hard-boundary-link';
 import Link from 'next/link';
 
 export function FinalCta() {
@@ -37,12 +38,12 @@ export function FinalCta() {
                   Fazer uma simulação
                 </Link>
 
-                <Link
+                <HardBoundaryLink
                   href="/acompanhar"
                   className="rounded-xl border border-slate-300 bg-white px-7 py-4 text-center text-base font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
                 >
                   Acompanhar solicitação
-                </Link>
+                </HardBoundaryLink>
               </div>
             </div>
 

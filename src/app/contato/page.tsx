@@ -1,3 +1,4 @@
+import { HardBoundaryLink } from '@/components/navigation/hard-boundary-link';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
@@ -57,12 +58,12 @@ export default function ContactPage() {
             title="Acompanhar solicitação"
             description="Consulte o andamento da sua solicitação, proposta e formalização utilizando a área segura de acompanhamento."
           >
-            <Link
+            <HardBoundaryLink
               href="/acompanhar"
               className="inline-flex rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
             >
               Acompanhar solicitação
-            </Link>
+            </HardBoundaryLink>
           </ContactCard>
 
           <ContactCard
