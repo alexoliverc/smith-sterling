@@ -27,6 +27,7 @@ Não foram encontrados milestones, tags, releases ou issues que contenham o road
 | 2026-08-16 | Cockpit operacional, resiliência, pré-produção e hardening de sessão | `1aee208`, `e1ebf28`, `ef672c4`, `459ed86`, `80c1023`, `3553ea5` |
 | 2026-08-17 | GTM, consentimento e analytics de funil com separação cliente/servidor | `2e75cc6`, `8aeed12`, `e7933f3`, `39129c3` |
 | 2026-08-16, branch divergente | Runbooks de backup e disaster recovery | `02c4997` em `ops/phase-60-disaster-recovery` |
+| 2026-09-07 | Fronteira de navegação para acessos financeiros públicos (PR #2 mesclada) | `6b4bb20` |
 
 ## Uso correto
 

@@ -8,7 +8,7 @@
 
 ## Produto implementado no commit avaliado
 
-`IMPLEMENTED` — O código em `39129c3` contém solicitação pública, acompanhamento protegido por protocolo, proposta, aceite/recusa, formalização com dados bancários protegidos, fila e cockpit administrativos. A definição comercial, os limites e a política de crédito são `UNKNOWN`.
+`IMPLEMENTED` — O núcleo verificado em `39129c3` contém solicitação pública, acompanhamento protegido por protocolo, proposta, aceite/recusa, formalização com dados bancários protegidos, fila e cockpit administrativos. Em `6b4bb20`, a PR #2 reforçou a navegação dos acessos públicos a solicitação e acompanhamento. A definição comercial, os limites e a política de crédito são `UNKNOWN`.
 
 ## Limite de evidência
 
