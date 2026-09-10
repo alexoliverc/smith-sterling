@@ -22,6 +22,7 @@ Atualizada em: 2026-09-07
 
 - `UNKNOWN` — O registro da fase 61 cobre explicitamente 61.3B; eventual escopo adicional da fase não foi recuperado.
 - `UNKNOWN` — Repositório não traz o plano original completo de aproximadamente 130 fases além da fonte recuperada para a fase 61.
+- `IN_PROGRESS` — A branch não mesclada `ops/phase-60-disaster-recovery` contém runbooks de backup/DR; merge, execução corrente e validade operacional devem ser confirmados.
 - `UNKNOWN` — A rotina recorrente periódica de testes de restauração em produção e o escopo formal da fase 60 no roadmap original.
 - `IN_PROGRESS` — Dados institucionais e autorização regulatória estão explicitamente provisórios/não confirmados no código; inicialização de produção é bloqueada.
 
