@@ -1,27 +1,127 @@
-# Checkpoint Atual
+# Checkpoint Atual — Smith Sterling
 
-## Checkpoint verificável
+**Data da reconciliação:** 2026-09-10
+**Branch:** `main`
+**Baseline de código validado:** `485f4a8`
 
-- Branch: `main`
-- Commit: `6b4bb20163bb3b65a82acf517a076aeb9a2ea9e6`
-- Commit: `453c953ad100923024fa58293fae7d72a34440d4`
-- Data do commit: 2026-09-07
-- Worktree na recuperação: limpo
-- Teste: 29 arquivos e 142 testes unitários aprovados em 2026-09-07
-- Integração mais recente: `IMPLEMENTED` — PR #2, fronteira de navegação para áreas financeiras públicas
-- Integração mais recente: `IMPLEMENTED` — Merge de `ops/phase-60-disaster-recovery` no commit `453c953` (política de backup e runbook de disaster recovery em `docs/operations/`)
+## 1. Estado técnico verificado
 
-## Roadmap
+O baseline `485f4a8` foi validado diretamente no ambiente local.
 
-`IMPLEMENTED` — A subfase 61.3B foi recuperada da conversa `CONECTIVIDADE GTM E ADS`. Ela trata da conectividade GTM/GA4 condicionada ao consentimento. Em 2026-09-07, o responsável confirmou Preview/Tag Assistant aprovado e a publicação do container. A versão e as capturas permanecem `UNKNOWN`. Consulte `../../roadmap/phases/PHASE-061-GTM-ADS-CONNECTIVITY.md`.
+Quality Gate:
 
-`IMPLEMENTED` — A busca em GitHub em 2026-09-07 encontrou 124 commits e a PR nº 1 com 96 commits, porém nenhum milestone, tag, release ou issue que defina fases. A linha do tempo técnica está em `../../roadmap/COMMIT_TIMELINE.md`.
+| Verificação | Resultado |
+|---|---|
+| ESLint | PASS |
+| TypeScript | PASS |
+| Testes padrão | 142/142 PASS |
+| Suítes de integração | 6/6 PASS |
+| Testes de integração | 11/11 PASS |
+| Total observado | 153 PASS |
+| Production build | PASS |
+| Working tree após validação técnica | CLEAN |
 
-`IN_PROGRESS` — Há uma branch não mesclada, `ops/phase-60-disaster-recovery`, no commit `02c4997`, com runbooks de backup e disaster recovery. Ela diverge de `main` após `3553ea5`; não é evidência de conclusão, merge ou fase atual.
-`IMPLEMENTED` — A branch `ops/phase-60-disaster-recovery` foi mesclada em `main` no commit `453c953`, integrando os runbooks de backup e disaster recovery (`docs/operations/backup-policy.md` e `docs/operations/disaster-recovery.md`). O primeiro teste de restore isolado em 16/08/2026 está registrado.
+## 2. Stack verificada
 
-`IMPLEMENTED` — A PR #2 foi mesclada em `main` como `6b4bb20`. Ela usa `HardBoundaryLink` nos acessos públicos a solicitação e acompanhamento, para realizar navegação completa nesses limites. Não altera o estado ou a pendência de validação da fase 61.
+- Node.js 24.19.0
+- npm 11.17.0
+- Git 2.55.0
+- Next.js 16.3.1
+- React 19.2.8
+- TypeScript 6.0.3
+- Prisma 7.9.1
+- Vitest 4.1.10
+- MySQL 8.4.11
 
-## Próximo checkpoint desejado
+## 3. Banco de integração
 
-Recuperar o plano original e associar suas fases às evidências de Git: fase, objetivo, dependências, critério de aceite, commits, testes e pendências. Como reforço não bloqueador, anexar versão e capturas da validação da fase 61.
+A suíte de integração utiliza exclusivamente:
+
+- `smith_sterling_test`;
+- `smith_sterling_test_shadow`.
+
+Host local validado:
+
+`127.0.0.1:3306`
+
+Durante a reconciliação foi corrigida a autenticação RSA do MySQL 8.4 no adapter Prisma/MariaDB.
+
+Commit:
+
+`485f4a8 fix: support local MySQL RSA authentication`
+
+A recuperação de chave pública é permitida somente para hosts loopback.
+
+## 4. Estado das fases
+
+### Fase 60
+
+`DONE / HISTORICAL_VERIFIED`
+
+Backup e Disaster Recovery estão integrados à `main`.
+
+### Fase 61
+
+`DONE / HISTORICAL_VERIFIED`
+
+Escopo verificado:
+
+- GTM;
+- Consent Mode;
+- GA4 condicionado ao consentimento;
+- funnel analytics;
+- fronteira pública/financeira;
+- HardBoundaryLink.
+
+Documento de fechamento:
+
+`../../roadmap/phases/SS-P61-CLOSURE-R01.md`
+
+## 5. Reconciliação
+
+Documento principal:
+
+`SS-RECON-R01.md`
+
+Estado:
+
+`COMPLETED`
+
+A reconciliação confirmou que o repositório contém implementação mais avançada do que indicavam alguns checkpoints documentais anteriores.
+
+## 6. Situação regulatória
+
+O fechamento técnico da Fase 61 não significa autorização regulatória para operação como Sociedade de Crédito Direto.
+
+Regulatory readiness e autorização do Banco Central permanecem trilhas separadas da implementação técnica.
+
+## 7. Roadmap pós-Fase 61
+
+Não foi encontrada no repositório definição histórica verificável para a Fase 62.
+
+A continuidade deverá ser formalizada como:
+
+- `HISTORICAL_RECONCILED`; ou
+- `NEW_2_0`.
+
+Nenhum nome histórico de fase futura deve ser inventado.
+
+## 8. Estado Git antes do fechamento documental
+
+Antes do commit desta normalização:
+
+- `origin/main`: `1281dc1`;
+- baseline técnico local: `485f4a8`;
+- `main` local estava cinco commits à frente de `origin/main`;
+- push ainda não executado.
+
+## 9. Próxima ação
+
+1. concluir normalização documental;
+2. revisar diff;
+3. criar commit documental;
+4. criar checkpoint/tag;
+5. somente então publicar a `main`;
+6. definir formalmente a próxima fase do roadmap reconciliado.
+
+**Checkpoint reconciliado**

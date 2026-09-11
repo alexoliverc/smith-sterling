@@ -1,41 +1,169 @@
-# Handoff do Projeto
+# Handoff — Smith Sterling
 
-## Snapshot verificável
+## Snapshot atual
 
-| Campo | Valor |
-| --- | --- |
+| Campo | Estado |
+|---|---|
 | Repositório | `https://github.com/alexoliverc/smith-sterling.git` |
-| Branch avaliada | `main` |
-| Commit avaliado | `6b4bb20163bb3b65a82acf517a076aeb9a2ea9e6` |
-| Data do commit | 2026-09-07 |
-| Worktree na clonagem | limpo |
-| Teste verificado | `npm test`: 29 arquivos, 142 testes aprovados em 2026-09-07 |
-| Fase 61 recuperada | `IMPLEMENTED` — subfase 61.3B de conectividade GTM e Ads; responsável confirmou Preview/Tag Assistant e publicação do container em 2026-09-07 |
-| Entrega integrada mais recente | `IMPLEMENTED` — PR #2: navegação reforçada nas fronteiras financeiras públicas |
-| Contexto para Gemini | `IMPLEMENTED` — `GEMINI.md` na raiz importa as regras e o estado de handoff para o Gemini Code Assist no VS Code |
-| Campo                          | Valor                                                                                                                                         |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| Repositório                    | `https://github.com/alexoliverc/smith-sterling.git`                                                                                           |
-| Branch avaliada                | `main`                                                                                                                                        |
-| Commit avaliado                | `453c953ad100923024fa58293fae7d72a34440d4`                                                                                                    |
-| Data do commit                 | 2026-09-07                                                                                                                                    |
-| Worktree na clonagem           | limpo                                                                                                                                         |
-| Teste verificado               | `npm test`: 29 arquivos, 142 testes aprovados em 2026-09-07                                                                                   |
-| Fase 61 recuperada             | `IMPLEMENTED` — subfase 61.3B de conectividade GTM e Ads; responsável confirmou Preview/Tag Assistant e publicação do container em 2026-09-07 |
-| Entrega integrada mais recente | `IMPLEMENTED` — Merge de `ops/phase-60-disaster-recovery` no commit `453c953`: runbooks de backup e DR                                        |
-| Contexto para Gemini           | `IMPLEMENTED` — `GEMINI.md` na raiz importa as regras e o estado de handoff para o Gemini Code Assist no VS Code                              |
+| Branch principal | `main` |
+| Baseline técnico validado | `485f4a8` |
+| Fase 60 | `DONE / HISTORICAL_VERIFIED` |
+| Fase 61 | `DONE / HISTORICAL_VERIFIED` |
+| Reconciliação | `SS-RECON-R01 — COMPLETED` |
+| Testes padrão | `142/142 PASS` |
+| Testes de integração | `11/11 PASS` |
+| Total observado | `153 PASS` |
+| Production build | `PASS` |
 
-## Pontos de atenção
+## Estado técnico
 
-- `ops/phase-60-disaster-recovery` é uma branch separada em `02c4997`; não está em `main`.
-- `ops/phase-60-disaster-recovery` foi integrada à `main` no commit `453c953`, adicionando os runbooks em `docs/operations/`; rotina periódica de restore drills em produção e formalização no plano original permanecem pendentes.
-- A fase 61 foi recuperada de conversa compartilhada. O trecho disponível cobre 61.3B; a publicação e os três critérios de aceite foram confirmados pelo responsável em 2026-09-07. A versão, o ambiente e as capturas externas não foram anexados.
-- O código bloqueia produção enquanto dados institucionais e autorização regulatória permanecerem provisórios.
-- A PR #2 não muda o checkpoint da fase 61; ela apenas reforça os caminhos públicos para solicitação e acompanhamento.
+A Smith Sterling possui atualmente implementação verificável para:
 
-## Próxima ação segura
+- jornada pública de solicitação;
+- acompanhamento por protocolo;
+- análise;
+- proposta de crédito;
+- formalização;
+- estados de liberação;
+- cockpit administrativo;
+- autenticação administrativa;
+- sessões;
+- rate limiting;
+- armazenamento protegido de PII;
+- oferta de crédito versionada;
+- históricos auditáveis;
+- GTM;
+- Consent Mode;
+- funnel analytics;
+- fronteira pública/financeira.
 
-Recuperar as demais fases do roadmap original e decidir explicitamente o destino da branch de disaster recovery. Como reforço não bloqueador, anexar a versão e capturas da validação da fase 61.
-Recuperar as demais fases do roadmap original a partir de sua fonte primária. Como reforço não bloqueador, anexar a versão e capturas da validação da fase 61.
+## Banco de dados
 
-Use `HANDOFF_TEMPLATE.md` para a próxima troca de agente.
+Banco:
+
+MySQL 8.4.11
+
+ORM:
+
+Prisma 7.9.1
+
+Adapter:
+
+`@prisma/adapter-mariadb`
+
+Ambiente de integração validado:
+
+- `smith_sterling_test`;
+- `smith_sterling_test_shadow`;
+- host `127.0.0.1`.
+
+## Correção de compatibilidade MySQL
+
+Durante a reconciliação foi identificado:
+
+`ER_CANNOT_RETRIEVE_RSA_KEY`
+
+Causa:
+
+autenticação RSA requerida pelo MySQL 8.4 durante conexão local pelo MariaDB driver.
+
+Correção:
+
+`485f4a8 fix: support local MySQL RSA authentication`
+
+A opção `allowPublicKeyRetrieval` somente é habilitada para hosts loopback.
+
+Após a correção:
+
+- 142 testes padrão passaram;
+- 11 testes de integração passaram;
+- build de produção passou.
+
+## Fase 60
+
+Backup e Disaster Recovery foram integrados à `main`.
+
+Commits relacionados:
+
+- `02c4997`
+- `453c953`
+- `59ef7ec`
+
+Status:
+
+`DONE`
+
+## Fase 61
+
+Escopo reconciliado:
+
+- Google Tag Manager;
+- Consent Mode;
+- GA4 condicionado ao consentimento;
+- privacy-safe funnel analytics;
+- analytics server/client boundary;
+- HardBoundaryLink;
+- public/financial boundary.
+
+Documento:
+
+`roadmap/phases/SS-P61-CLOSURE-R01.md`
+
+Status:
+
+`DONE`
+
+## Documentação de reconciliação
+
+Documentos principais:
+
+- `docs/00-master/SS-RECON-R01.md`;
+- `roadmap/phases/SS-P61-CLOSURE-R01.md`;
+- `evidence/quality/PHASE-061-VALIDATION-2026-09-10.md`;
+- `docs/00-master/CURRENT_CHECKPOINT.md`;
+- `roadmap/PHASE_STATUS.md`.
+
+## Roadmap futuro
+
+Não existe evidência recuperada de nomenclatura histórica original para a Fase 62.
+
+Qualquer continuação deve identificar sua origem como:
+
+- `HISTORICAL_RECONCILED`; ou
+- `NEW_2_0`.
+
+Não inventar nomes históricos.
+
+## Regras para o próximo agente
+
+Antes de qualquer alteração:
+
+1. ler `AGENTS.md`;
+2. ler `MEMORY.md`;
+3. ler o registro mais recente em `memory/`;
+4. ler `docs/00-master/CURRENT_CHECKPOINT.md`;
+5. ler `docs/00-master/SS-RECON-R01.md`;
+6. ler `roadmap/PHASE_STATUS.md`;
+7. verificar `git status`;
+8. verificar branch e HEAD.
+
+Não:
+
+- executar reset destrutivo;
+- apagar migrations;
+- limpar volumes;
+- alterar produção;
+- executar push sem revisão;
+- assumir fase futura sem evidência.
+
+## Separação regulatória
+
+Technical readiness não equivale a autorização regulatória.
+
+A futura operação como SCD depende de trilha jurídica, societária, contábil e regulatória específica, além da autorização aplicável.
+
+## Próximo passo
+
+Fechar documentalmente a reconciliação, criar checkpoint Git e só então definir a próxima fase de implementação.
+
+**Fim do handoff reconciliado**
